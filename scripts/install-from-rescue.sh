@@ -157,6 +157,22 @@ say "4/7 Partitionnement et formatage de ${DISKS[*]} (disko)"
 if command -v mdadm >/dev/null; then
   mdadm --stop --scan 2>/dev/null || true
 fi
+
+# Rescue à court de RAM (le store Nix y est en mémoire, pas de zram) : TEMP_SWAP=/dev/sdaN
+# donne un swap provisoire sur une partition du disque à effacer, le temps de télécharger et
+# construire ce que disko demande ; il est retiré avant l'effacement.
+if [[ -n "${TEMP_SWAP:-}" ]]; then
+  [[ -b "$TEMP_SWAP" ]] || die "TEMP_SWAP=$TEMP_SWAP n'est pas un périphérique bloc."
+  on_target=0
+  for d in "${DISKS[@]}"; do [[ "$TEMP_SWAP" == "$d"* ]] && on_target=1; done
+  (( on_target )) || die "TEMP_SWAP doit être une partition d'un disque listé dans 'disks' (il sera effacé)."
+  say "Swap provisoire sur $TEMP_SWAP"
+  mkswap -f "$TEMP_SWAP" && swapon "$TEMP_SWAP"
+  nix build --no-link "$DISKO" \
+    && nix build --no-link "$REPO_DIR#nixosConfigurations.$HOST.config.system.build.diskoScript" \
+    || { swapoff "$TEMP_SWAP"; die "préparation de disko impossible (mémoire ?). Le disque est intact."; }
+  swapoff "$TEMP_SWAP" || die "impossible de retirer le swap provisoire : redémarre le rescue."
+fi
 nix run "$DISKO" -- --mode destroy,format,mount --flake "$FLAKE"
 mountpoint -q /mnt || die "disko n'a pas monté /mnt."
 # Le swap soulage la RAM pour la suite de l'installation (s'il n'est pas déjà actif).
