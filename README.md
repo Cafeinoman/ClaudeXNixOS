@@ -529,20 +529,19 @@ virtuelles : contrairement à l'Atom, le Xeon gère VT-x.
 
 Classées par utilité pour toi :
 
-1. (Fait : sauvegardes B2 + Proton Drive, phase 7.)
-2. **Fichier Proton VPN dans sops-nix** — sops-nix est maintenant en place pour les
-   sauvegardes ; le fichier WireGuard de Proton pourrait y passer aussi, pour ne plus le
-   redéposer à la main après une réinstallation.
-3. (Fait : VPN Proton pour qBittorrent, phase 4 bis.)
-4. **Recyclarr** — applique automatiquement à Sonarr/Radarr les profils de qualité
+1. **Fichier Proton VPN dans sops-nix** — sops-nix est en place pour les sauvegardes ;
+   le fichier WireGuard de Proton pourrait y passer aussi, pour ne plus le redéposer à
+   la main après une réinstallation.
+2. **Recyclarr** — applique automatiquement à Sonarr/Radarr les profils de qualité
    recommandés par TRaSH Guides, dont des profils « compatibles lecture directe »
    (H.264, pas de HEVC 4K) : c'est le levier n°1 contre le transcodage sans GPU.
-   Le module NixOS existe. À ajouter une fois les clés API connues (après sops-nix).
-5. **Prétranscodage nocturne** (Tdarr ou Unmanic, en conteneur) — convertit la nuit
+   Le module NixOS existe. À ajouter une fois les clés API des *arr connues (elles sont
+   dans l'état des applications, hors de Git : prévoir de les passer par sops-nix).
+3. **Prétranscodage nocturne** (Tdarr ou Unmanic, en conteneur) — convertit la nuit
    les fichiers problématiques (HEVC, sous-titres PGS) en formats lisibles partout.
    Coûteux en CPU et en temps, mais le Xeon peut tourner la nuit. Utile seulement si
    les profils de qualité ne suffisent pas.
-6. **Jellyfin : plugins** — « Intro Skipper » (saute les génériques), « Playback
+4. **Jellyfin : plugins** — « Intro Skipper » (saute les génériques), « Playback
    Reporting » (statistiques). À installer depuis le catalogue intégré de Jellyfin.
 
 À éviter : **FlareSolverr** sur l'Atom (Chromium embarqué, trop lourd ; acceptable
