@@ -3,12 +3,12 @@
 # Le script d'installation refuse de tourner tant qu'il reste un "CHANGE_ME".
 {
   # Ton utilisateur (sudo avec mot de passe, pas de root direct).
-  userName = "CHANGE_ME";
+  userName = "fdelalleau";
 
   # Ta ou tes clés SSH publiques : contenu de ~/.ssh/id_ed25519.pub
   # (sur téléphone : générée par Termius / Blink / JuiceSSH).
   sshKeys = [
-    "ssh-ed25519 AAAA_CHANGE_ME ton-telephone"
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN8oba0QsLg5iTo9N9bHsxwsMahqbHb0FiyoLsd0qYsK telephone"
   ];
 
   timeZone = "Europe/Paris";
