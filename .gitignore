@@ -1,0 +1,6 @@
+# Archives d'état des applications : contiennent des secrets
+app-state-*.tar.gz
+# Fichiers WireGuard Proton
+*.conf
+# Résultats de nixos-rebuild build
+result

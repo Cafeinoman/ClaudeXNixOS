@@ -1,0 +1,14 @@
+# Qui peut déchiffrer quels secrets. Remplace les clés d'exemple (voir secrets/README.md).
+keys:
+  # Ta clé personnelle (pour éditer les secrets depuis ton poste ou un serveur).
+  - &admin age1CHANGE_ME_cle_admin
+  # Clés des machines, dérivées de leur clé SSH d'hôte après installation.
+  - &atom age1CHANGE_ME_cle_atom
+  - &ks3 age1CHANGE_ME_cle_ks3
+creation_rules:
+  - path_regex: secrets/atom\.yaml$
+    key_groups:
+      - age: [*admin, *atom]
+  - path_regex: secrets/ks3\.yaml$
+    key_groups:
+      - age: [*admin, *ks3]
