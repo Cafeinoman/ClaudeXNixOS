@@ -175,7 +175,7 @@ fi
 if [[ -n "${TEMP_SWAP:-}" ]]; then
   say "Préparation de disko (swap provisoire encore actif)"
   nix build --no-link "$DISKO" \
-    && nix build --no-link "$REPO_DIR#nixosConfigurations.$HOST.config.system.build.diskoScript" \
+    && nix build --no-link "$REPO_DIR#nixosConfigurations.$HOST.config.system.build.destroyFormatMount" \
     || { swapoff "$TEMP_SWAP"; die "préparation de disko impossible (mémoire ?). Le disque est intact."; }
   swapoff "$TEMP_SWAP" || die "impossible de retirer le swap provisoire : redémarre le rescue."
 fi
