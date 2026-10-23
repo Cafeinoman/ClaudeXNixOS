@@ -67,6 +67,20 @@ echo "(la configuration gère les deux, c'est juste pour information)"
 read -r -p "Tape EFFACER pour continuer : " answer
 [[ "$answer" == "EFFACER" ]] || die "abandon, rien n'a été modifié."
 
+# Rescue à court de RAM (le store Nix y est en mémoire, pas de zram) : TEMP_SWAP=/dev/sdaN
+# donne un swap provisoire sur une PETITE partition du disque à effacer (le noyau réserve
+# ~1 octet de RAM par page de 4 Ko de swap : 1,8 To de swap, c'est ~490 Mo perdus). Actif
+# dès maintenant pour couvrir l'évaluation, retiré juste avant que disko n'efface le disque.
+if [[ -n "${TEMP_SWAP:-}" ]]; then
+  [[ -b "$TEMP_SWAP" ]] || die "TEMP_SWAP=$TEMP_SWAP n'est pas un périphérique bloc."
+  on_target=0
+  for d in "${DISKS[@]}"; do [[ "$TEMP_SWAP" == "$d"* ]] && on_target=1; done
+  (( on_target )) || die "TEMP_SWAP doit être une partition d'un disque listé dans 'disks' (il sera effacé)."
+  (( $(blockdev --getsize64 "$TEMP_SWAP") <= 16 * 1024 ** 3 )) || die "TEMP_SWAP dépasse 16 Go : le swap consommerait de la RAM. Utilise une partition de ~8 Go."
+  say "Swap provisoire sur $TEMP_SWAP"
+  mkswap -f "$TEMP_SWAP" && swapon "$TEMP_SWAP"
+fi
+
 # ---------------------------------------------------------------- 2. Réseau
 say "2/7 Détection du réseau (valeurs du rescue = valeurs du serveur)"
 IFACE="$(ip -4 route show default | awk '{print $5; exit}')"
@@ -158,16 +172,8 @@ if command -v mdadm >/dev/null; then
   mdadm --stop --scan 2>/dev/null || true
 fi
 
-# Rescue à court de RAM (le store Nix y est en mémoire, pas de zram) : TEMP_SWAP=/dev/sdaN
-# donne un swap provisoire sur une partition du disque à effacer, le temps de télécharger et
-# construire ce que disko demande ; il est retiré avant l'effacement.
 if [[ -n "${TEMP_SWAP:-}" ]]; then
-  [[ -b "$TEMP_SWAP" ]] || die "TEMP_SWAP=$TEMP_SWAP n'est pas un périphérique bloc."
-  on_target=0
-  for d in "${DISKS[@]}"; do [[ "$TEMP_SWAP" == "$d"* ]] && on_target=1; done
-  (( on_target )) || die "TEMP_SWAP doit être une partition d'un disque listé dans 'disks' (il sera effacé)."
-  say "Swap provisoire sur $TEMP_SWAP"
-  mkswap -f "$TEMP_SWAP" && swapon "$TEMP_SWAP"
+  say "Préparation de disko (swap provisoire encore actif)"
   nix build --no-link "$DISKO" \
     && nix build --no-link "$REPO_DIR#nixosConfigurations.$HOST.config.system.build.diskoScript" \
     || { swapoff "$TEMP_SWAP"; die "préparation de disko impossible (mémoire ?). Le disque est intact."; }
