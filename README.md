@@ -42,18 +42,18 @@ CHANGELOG.md                  ← journal des changements système
 
    | Serveur | `disks` | `lowSpecHardware` |
    |---|---|---|
-   | KS-3 (Atom N2800, 4 Go, 1 × 2 To) | `[ "/dev/sda" ]` | `true` |
-   | Xeon E3-1230 v6 (16 Go, 2 × 2 To) | `[ "/dev/sda" "/dev/sdb" ]` | `false` |
+   | `atom` : KS-3 ancien modèle (Atom N2800, 4 Go, 1 × 2 To) | `[ "/dev/sda" ]` | `true` |
+   | `ks3` : KS-3 Xeon E3-1245 v5 (32 Go, 2 × 2 To) | `[ "/dev/sda" "/dev/sdb" ]` | `false` |
 
    Avec deux disques, la config crée un **RAID 1 logiciel** (miroir mdadm) : 2 To
    utiles, et le serveur continue de tourner (et redémarre seul) si un disque meurt.
 
 ### Pourquoi pas « Bring Your Own Image » / « Bring Your Own Linux » ?
 
-Le manager les propose pour le KS-3, mais être proposé ne lève pas les contraintes
+Le manager les propose pour le KS-3 (Atom comme Xeon), mais être proposé ne lève pas les contraintes
 de la documentation OVH. Les deux modes écrivent une image qcow2 sur le disque, et
-sur un KS-3 ils coincent :
-- l'image doit faire **moins que la RAM moins 3 Gio**, soit moins de 1 Gio ici ;
+sur l'Atom (4 Go) ils coincent :
+- l'image doit faire **moins que la RAM moins 3 Gio**, soit moins de 1 Gio sur l'Atom ;
 - BYOLinux impose **une seule partition** et **pas de sous-volumes btrfs**, donc pas de
   swap séparé ni de découpage `/nix`, `/home`, `/srv` ;
 - les deux exigent **cloud-init** dans l'image, à configurer côté NixOS ;
@@ -61,7 +61,7 @@ sur un KS-3 ils coincent :
 
 Le mode rescue reste plus simple et garde la config disko telle quelle.
 
-Sur le **Xeon (16 Go)**, la limite de taille ne gêne plus, mais BYOI **ne gère pas
+Sur le **Xeon (32 Go)**, la limite de taille ne gêne plus, mais BYOI **ne gère pas
 le RAID logiciel** à l'installation (documentation OVH) : il écrit l'image sur un seul
 disque. Le mode rescue reste donc la voie à suivre pour avoir le RAID 1.
 
@@ -299,7 +299,7 @@ Conséquences :
 - **Bande passante sortante** : elle limite le nombre de flux simultanés hors de
   chez toi. Un film 1080p en lecture directe demande 8 à 20 Mbit/s ; vérifie le débit
   de ton offre Kimsufi.
-- **KS-3** : lecture directe uniquement, aucun transcodage.
+- **Atom** : lecture directe uniquement, aucun transcodage.
 
 **Stratégie pour éviter le transcodage** :
 1. Dans Sonarr/Radarr, préfère les sorties **1080p H.264 (x264), audio AAC/AC3**,
@@ -498,14 +498,14 @@ Causes probables, dans l'ordre :
    particulier. Le schéma hybride BIOS+UEFI couvre la plupart des cas.
 3. Un changement récent → revenir à la génération précédente (ci-dessus).
 
-## Budget RAM sur le Xeon (16 Go)
+## Budget RAM sur le Xeon (32 Go)
 
 Tout activer (seedbox complète + VPN + quatre services de streaming) consomme
 environ 3 à 4 Go, Claude Code et deux ou trois side projects compris. Un transcodage
 Jellyfin ajoute 0,5 à 1 Go. Il reste de la marge, y compris pour des machines
 virtuelles : contrairement à l'Atom, le Xeon gère VT-x.
 
-## Limites du KS-3 à garder en tête
+## Limites de l'Atom (machine `atom`) à garder en tête
 
 - **Pas de VT-x** : pas de machines virtuelles (KVM). Les conteneurs Docker fonctionnent.
 - **CPU lent** : un `rebuild` prend plusieurs minutes, et toute compilation depuis les
@@ -545,14 +545,14 @@ Classées par utilité pour toi :
 6. **Jellyfin : plugins** — « Intro Skipper » (saute les génériques), « Playback
    Reporting » (statistiques). À installer depuis le catalogue intégré de Jellyfin.
 
-À éviter : **FlareSolverr** sur le KS-3 (Chromium embarqué, trop lourd ; acceptable
+À éviter : **FlareSolverr** sur l'Atom (Chromium embarqué, trop lourd ; acceptable
 sur le Xeon si un indexeur l'exige), **Readarr** (plus maintenu), le transcodage
 4K, quel que soit le serveur.
 
 ## Ce qui n'a pas été testé
 
 La configuration a été évaluée avec succès (NixOS 26.05 ; profil par défaut, profil
-KS-3 avec tout activé, profil Xeon RAID 1 avec tout activé et Jellyfin public ; aucun
+`atom` avec tout activé, profil `ks3` (Xeon) RAID 1 avec tout activé et Jellyfin public ; aucun
 avertissement), le script d'installation et le service de redirection de port
 passent `shellcheck`. Un
 `nix build --dry-run` confirme que tous les logiciels viennent du cache binaire
