@@ -148,7 +148,7 @@ if [[ -d "$REPO_DIR/.git" ]]; then
 fi
 
 say "Vérification que la configuration s'évalue AVANT de toucher au disque"
-nix eval --raw "$FLAKE.config.system.build.toplevel.drvPath" >/dev/null \
+nix eval --raw "$REPO_DIR#nixosConfigurations.$HOST.config.system.build.toplevel.drvPath" >/dev/null \
   || die "la configuration ne s'évalue pas, corrige l'erreur ci-dessus. Le disque est intact."
 
 # ---------------------------------------------------------------- 4. Disque
