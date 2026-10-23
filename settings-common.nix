@@ -1,6 +1,6 @@
 # Réglages communs à toutes tes machines. Les réglages propres à chaque serveur sont
 # dans hosts/<machine>/settings.nix.
-# Le script d'installation refuse de tourner tant qu'il reste un "CHANGE_ME".
+# Le script d'installation refuse de tourner tant qu'un marqueur de valeur à remplir y figure.
 {
   # Ton utilisateur (sudo avec mot de passe, pas de root direct).
   userName = "fdelalleau";
