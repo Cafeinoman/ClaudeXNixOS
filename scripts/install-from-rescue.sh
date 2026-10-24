@@ -24,7 +24,6 @@ fi
 HOST_DIR="$REPO_DIR/hosts/$HOST"
 HOST_SETTINGS="$HOST_DIR/settings.nix"
 COMMON="$REPO_DIR/settings-common.nix"
-FLAKE="$REPO_DIR#$HOST"
 
 setting() { # lit une valeur texte simple dans settings-common.nix
   sed -n "s/^[[:space:]]*$1[[:space:]]*=[[:space:]]*\"\([^\"]*\)\".*/\1/p" "$COMMON" | head -n1
@@ -181,14 +180,16 @@ say "4/7 Préparation, puis partitionnement de ${DISKS[*]} (disko)"
 # est exactement ce que le CLI exécuterait. Tout est construit AVANT d'effacer quoi que ce soit.
 DISKO_OUT="$(nix build --no-link --print-out-paths "$CFG.config.system.build.destroyFormatMount")" \
   || { undo_temp_swap; die "construction du script disko impossible. Le disque est intact."; }
-GENCONF_OUT="$(nix build --no-link --print-out-paths "$CFG.config.system.build.nixos-generate-config")" \
-  && ENTER_OUT="$(nix build --no-link --print-out-paths "$CFG.pkgs.nixos-enter")" \
-  || { undo_temp_swap; die "construction des outils d'installation impossible. Le disque est intact."; }
+if ! GENCONF_OUT="$(nix build --no-link --print-out-paths "$CFG.config.system.build.nixos-generate-config")" \
+  || ! ENTER_OUT="$(nix build --no-link --print-out-paths "$CFG.pkgs.nixos-enter")"; then
+  undo_temp_swap; die "construction des outils d'installation impossible. Le disque est intact."
+fi
 GENERATE_CONFIG="$GENCONF_OUT/bin/nixos-generate-config"
 NIXOS_ENTER_BIN="$ENTER_OUT/bin/nixos-enter"
 mapfile -t DISKO_BIN < <(compgen -G "$DISKO_OUT/bin/*")
-(( ${#DISKO_BIN[@]} == 1 )) && [[ -x "$GENERATE_CONFIG" && -x "$NIXOS_ENTER_BIN" ]] \
-  || { undo_temp_swap; die "outils introuvables après construction. Le disque est intact."; }
+if (( ${#DISKO_BIN[@]} != 1 )) || [[ ! -x "$GENERATE_CONFIG" || ! -x "$NIXOS_ENTER_BIN" ]]; then
+  undo_temp_swap; die "outils introuvables après construction. Le disque est intact."
+fi
 
 # Le rescue OVH assemble parfois l'ancien RAID logiciel : on l'arrête avant d'effacer.
 if command -v mdadm >/dev/null; then
@@ -249,7 +250,7 @@ nix build --profile /nix/var/nix/profiles/system "$CFG.config.system.build.tople
   || die "construction du système impossible. Le disque est partitionné et /nix pointe dessus :
   ne relance pas le script tel quel, note l'erreur ; relancer seulement cette commande :
   nix build --profile /nix/var/nix/profiles/system '$CFG.config.system.build.toplevel'"
-mkdir -m 0755 -p /mnt/etc && touch /mnt/etc/NIXOS
+mkdir -p /mnt/etc && chmod 0755 /mnt/etc && touch /mnt/etc/NIXOS
 say "Installation du chargeur de démarrage (GRUB)"
 NIXOS_INSTALL_BOOTLOADER=1 "$NIXOS_ENTER_BIN" --root /mnt -- \
   /run/current-system/bin/switch-to-configuration boot \
