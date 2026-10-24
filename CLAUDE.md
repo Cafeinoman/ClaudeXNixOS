@@ -100,7 +100,8 @@ Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent, commande d
 ## Avancement
 
 - Phase 0 : faite (dépôt public `github.com/Cafeinoman/ClaudeXNixOS`, commits en
-  `Cafeinoman@users.noreply.github.com`, `settings-common.nix` rempli, README corrigé).
+  `Cafeinoman@users.noreply.github.com`, `settings-common.nix` rempli, README corrigé ;
+  `atom` et `ks3` évalués avec le `flake.lock` du 24/10/2026, shellcheck propre).
 - Phase 1 : `atom` installé depuis le rescue avec `TEMP_SWAP=/dev/sda3` (partition provisoire
   de 8 Go créée à la main) et `NIX_CONFIG="max-jobs = 1 / cores = 1"`.
 - Suite : phase 2 (Tailscale), phase 7 = sauvegardes (compte B2 plafonds à 0 $, clé age, sujet
