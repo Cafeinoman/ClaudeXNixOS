@@ -153,7 +153,7 @@ experimental-features = nix-command flakes
 build-users-group = nixbld
 EOF
   mkdir -p /nix && chmod 0755 /nix && chown setupuser /nix
-  su - setupuser -c 'curl -fsSL https://nixos.org/nix/install | sh -s -- --no-daemon'
+  su - setupuser -c 'curl -fsSL https://nixos.org/nix/install | sh -s -- --no-daemon --no-channel-add'
 fi
 export PATH="$NIX_BIN:$PATH"
 export NIX_SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
@@ -262,11 +262,13 @@ DEST="/mnt/home/$USER_NAME/nixos-config"
 mkdir -p "$(dirname "$DEST")"
 rm -rf "$DEST"
 cp -a "$REPO_DIR" "$DEST"
+# Le PATH du rescue n'existe pas dans le système installé : on donne le sien.
+IN_TARGET="export PATH=/run/current-system/sw/bin;"
 NIXOS_ENTER=("$NIXOS_ENTER_BIN" --root /mnt -c)
-"${NIXOS_ENTER[@]}" "chown -R $USER_NAME:users /home/$USER_NAME"
+"${NIXOS_ENTER[@]}" "$IN_TARGET chown -R $USER_NAME:users /home/$USER_NAME"
 
 echo "Choisis le mot de passe de $USER_NAME (il servira pour sudo, pas pour SSH) :"
-until "${NIXOS_ENTER[@]}" "passwd $USER_NAME"; do
+until "${NIXOS_ENTER[@]}" "$IN_TARGET passwd $USER_NAME"; do
   warn "échec, on recommence."
 done
 sync
