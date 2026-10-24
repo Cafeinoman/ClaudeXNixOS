@@ -90,8 +90,8 @@ Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent, commande d
   `shellcheck` propre sur tous les scripts et scripts générés ; allers-retours restic et age testés
   en local.
 - [Certain] **`atom` installé et démarré le 24/10/2026** (NixOS 26.05, nixpkgs `da6dc0e`,
-  `flake.lock` et fichiers générés commités). SSH par clé OK, aucun service en échec.
-  Anomalie non expliquée : `sshd` a mis ≥ 5 min à écouter au premier démarrage.
+  `flake.lock` et fichiers générés commités). Démarrage en 30 s, SSH par clé OK (clé `~/.ssh/nix`
+  du poste), aucun service en échec.
 - [Certain] **Jamais testé en réel** : `ks3`, envoi réel vers B2 ou Proton, tunnel VPN réel,
   iGPU du KS-3.
 - Le CLI Proton Drive (`proton-drive`, ~v0.8) est un binaire précompilé (build `x64-baseline`
