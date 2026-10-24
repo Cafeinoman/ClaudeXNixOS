@@ -89,51 +89,40 @@ Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent, commande d
 - [Certain] Les deux machines s'évaluent sans avertissement, options activées et désactivées ;
   `shellcheck` propre sur tous les scripts et scripts générés ; allers-retours restic et age testés
   en local.
-- [Certain] **Jamais testé en réel** : démarrage sur un vrai Kimsufi, envoi réel vers B2 ou
-  Proton, tunnel VPN réel, iGPU du KS-3. Le premier boot reste le moment de vérité.
+- [Certain] **`atom` installé et démarré le 24/10/2026** (NixOS 26.05, nixpkgs `da6dc0e`,
+  `flake.lock` et fichiers générés commités). SSH par clé OK, aucun service en échec.
+  Anomalie non expliquée : `sshd` a mis ≥ 5 min à écouter au premier démarrage.
+- [Certain] **Jamais testé en réel** : `ks3`, envoi réel vers B2 ou Proton, tunnel VPN réel,
+  iGPU du KS-3.
 - Le CLI Proton Drive (`proton-drive`, ~v0.8) est un binaire précompilé (build `x64-baseline`
   pour les CPU sans AVX2, ce qui est le cas de l'Atom), lancé via `nix-ld`. Ses options peuvent changer.
 
-## Phase 0 — ce qu'il reste à faire (travail sur l'ordinateur)
+## Avancement
 
-Références : `README.md`, section « Phase 0 ». Rien ne touche encore au serveur.
+- Phase 0 : faite (dépôt public `github.com/Cafeinoman/ClaudeXNixOS`, commits en
+  `Cafeinoman@users.noreply.github.com`, `settings-common.nix` rempli, README corrigé).
+- Phase 1 : `atom` installé depuis le rescue avec `TEMP_SWAP=/dev/sda3` (partition provisoire
+  de 8 Go créée à la main) et `NIX_CONFIG="max-jobs = 1 / cores = 1"`.
+- Suite : phase 2 (Tailscale), phase 7 = sauvegardes (compte B2 plafonds à 0 $, clé age, sujet
+  ntfy, `secrets/atom.yaml`) ; puis seedbox + VPN ; puis commande du KS-3 quand il est en stock
+  en France, et migration avec `migrate-app-state.sh`. **Lancer `sauvegarde-proton` avant tout
+  déménagement Atom → KS-3.**
 
-État constaté : le dépôt n'est **pas encore initialisé dans Git**, il n'y a **pas de
-`flake.lock`**, et `settings-common.nix` contient toujours `CHANGE_ME` (le script d'installation
-refuse de tourner tant qu'il en reste).
+## Le rescue OVH de l'Atom (leçons de l'installation)
 
-À faire, dans l'ordre :
-1. [ ] **Sauvegarder** ce qui compte sur l'Atom actuel (il sera effacé).
-2. [ ] `git init`, premier commit, dépôt GitHub/GitLab. Public possible (aucun secret dans le
-   dépôt : clé SSH *publique* seulement). Privé : prévoir un jeton en lecture pour cloner
-   depuis le rescue.
-3. [ ] **Clé SSH du téléphone** (ed25519, générée dans Termius/Blink) : demander la partie
-   *publique* à l'utilisateur. Ne jamais lui demander ni accepter une clé privée.
-4. [ ] Remplir `settings-common.nix` : `userName`, `sshKeys`.
-5. [ ] Vérifier `hosts/atom/settings.nix` : `disks = [ "/dev/sda" ]` à confirmer avec `lsblk`
-   dans le rescue (le disque sera **effacé**).
-6. [ ] **Générer et committer `flake.lock`** (`nix flake lock`), sur une machine avec Nix et accès
-   à GitHub. Le travail précédent a été fait derrière un proxy qui bloquait GitHub, donc aucun
-   verrou n'existe. Sans verrou, l'installation prendrait les versions du jour.
-7. [ ] Évaluer les deux machines avant d'aller plus loin :
-   `nix eval .#nixosConfigurations.atom.config.system.build.toplevel.drvPath` (idem `ks3`),
-   puis `shellcheck scripts/*.sh`.
-8. [ ] Corriger les textes périmés du README (voir plus bas).
-
-Après la phase 0 (hors périmètre de cette session) : phase 1 = installation de l'Atom depuis
-le rescue ; phase 7 = sauvegardes, qui exigent compte B2 (plafonds à 0 $), clé age,
-sujet ntfy, `secrets/atom.yaml` ; puis seedbox + VPN ; puis commande du KS-3 quand il est
-en stock en France, et migration avec `migrate-app-state.sh`. **Lancer `sauvegarde-proton`
-avant tout déménagement Atom → KS-3.**
-
-## Incohérences connues à corriger dans le README
-
-- Phase 0, tableau des disques : cite un « Xeon E3-1230 v6 (16 Go) ». Le KS-3 visé est le
-  **Xeon E3-1245 v5, 32 Go**.
-- Les sections « Budget RAM sur le Xeon (16 Go) » et « Limites du KS-3 » mélangent les noms :
-  « KS-3 » y désigne l'**Atom** (machine `atom`), pas le `ks3`. Renommer, et mettre le budget
-  RAM du Xeon à 32 Go.
-- Suggestion n°2 (fichier Proton VPN dans sops-nix) et Recyclarr / Tdarr : pas encore faits.
+- `/` est un **rootfs (ramfs) de 3,9 Go, non swappable** : le store Nix y occupe la RAM. Pas de
+  module zram. Ne pas faire `nix run github:nix-community/disko` (2ᵉ nixpkgs + documentation
+  construite sur place → OOM, `sshd` tué). Le script construit `destroyFormatMount` depuis la config.
+- Le bac à sable de Nix ne marche pas sur un rootfs (`pivot_root`), et un store « détourné »
+  (`nixos-install --store /mnt`) l'impose : le script déplace le store sur `/mnt/nix` après disko
+  et construit le système directement.
+- Un swap énorme (1,8 To) consomme ~490 Mo de RAM noyau et a fait tomber le rescue : ≤ 16 Go.
+- Lancer le script dans `tmux` (les coupures SSH tuent le script). `git` n'est pas toujours
+  présent dans un rescue neuf : `apt-get install -y git tmux`.
+- Le rescue change de clé d'hôte à chaque redémarrage, NixOS aussi au premier boot :
+  `ssh-keygen -R <ip>`.
+- Le Nix du rescue est mono-utilisateur dans `/home/setupuser/.nix-profile/bin` ; pour un
+  `nix-collect-garbage`, le lancer en root avec ce PATH.
 
 ## Pièges à ne pas répéter
 
