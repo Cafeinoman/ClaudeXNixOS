@@ -24,6 +24,13 @@ common // {
   # Test de la lecture DIRECTE avant de choisir le serveur suivant : le processeur ne peut
   # pas transcoder. Désactiver le transcodage pour chaque utilisateur dans Jellyfin
   # (Tableau de bord → Utilisateurs → « Autoriser la lecture nécessitant un transcodage »).
+  # Sauvegarde B2 nocturne. Pas de copie Proton Drive : son CLI (compilé avec Bun, build
+  # « baseline ») exige SSE4.2/POPCNT, absents de l'Atom.
+  backup = common.backup // {
+    enable = true;
+    protonCopy = false;
+  };
+
   streaming = common.streaming // {
     jellyfin = true;
     smb = true;

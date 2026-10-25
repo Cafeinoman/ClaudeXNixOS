@@ -28,11 +28,11 @@
   # Sauvegardes (README, « Sauvegardes ») : à activer une fois les secrets créés.
   backup = {
     enable = false;
-    b2Bucket = "";                   # nom de ton bucket B2 (privé)
+    b2Bucket = "NixOS-save";         # bucket B2 privé ; un dépôt restic par machine (b2:NixOS-save:<machine>)
     protonCopy = false;              # copie chiffrée vers Proton Drive, à la demande
     protonReminderDays = 30;         # rappel ntfy si pas de copie Proton depuis N jours (0 = jamais)
     protonFolder = "/my-files/backups"; # dossier Proton Drive (créé à la main une fois)
-    ageRecipient = "";               # ta clé publique age (age1...), la privée reste chez toi
+    ageRecipient = "age1gqlz67qlc86qw3e50dvkk97th34phaw53txecv6sc9ugt049mexqllmckt"; # ta clé age publique (la privée : keys.txt, gestionnaire de mots de passe)
   };
 
   streaming = {

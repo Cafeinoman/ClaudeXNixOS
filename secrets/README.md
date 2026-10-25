@@ -5,10 +5,10 @@ Seuls ta clé personnelle et la machine concernée peuvent les ouvrir.
 
 ## Une seule fois : ta clé personnelle
 
-Sur le serveur (ou ton PC), dans ton dossier personnel :
+Sur ton poste (Manjaro : `sudo pacman -S age sops`), ou sur un serveur avec `nix shell nixpkgs#age` :
 
 ```bash
-nix shell nixpkgs#age -c age-keygen -o ~/.config/sops/age/keys.txt
+mkdir -p ~/.config/sops/age && age-keygen -o ~/.config/sops/age/keys.txt
 ```
 
 La ligne `# public key: age1...` est ta clé publique : mets-la à la place de
@@ -26,11 +26,23 @@ nix shell nixpkgs#ssh-to-age -c sh -c 'ssh-to-age < /etc/ssh/ssh_host_ed25519_ke
 Mets le résultat (`age1...`) à la place de `age1CHANGE_ME_cle_atom` (ou `_ks3`) dans
 `.sops.yaml`.
 
+## Le mot de passe restic
+
+Ce n'est pas restic qui le crée : tu l'inventes, une fois, puis tu le saisis dans sops.
+
+```bash
+head -c 32 /dev/urandom | base64
+```
+
+Garde-le **d'abord** dans ton gestionnaire de mots de passe. Le dépôt restic est créé
+automatiquement à la première sauvegarde (`initialize = true` dans `modules/backup.nix`),
+chiffré avec ce mot de passe. Sans lui, la sauvegarde est illisible, y compris pour toi.
+
 ## Créer le fichier de secrets
 
 ```bash
-cd ~/nixos-config
-nix shell nixpkgs#sops -c sops secrets/atom.yaml     # ou ks3.yaml
+cd ~/Projets/NixServer          # sur le poste (ou ~/nixos-config sur un serveur, avec nix shell nixpkgs#sops)
+sops secrets/atom.yaml          # ou ks3.yaml
 ```
 
 Contenu à saisir (l'éditeur s'ouvre ; à l'enregistrement, sops chiffre) :
