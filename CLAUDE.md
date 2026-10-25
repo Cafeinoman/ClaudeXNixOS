@@ -51,9 +51,12 @@ Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent, commande d
 
 - Pour `ks3` : vérifier avec `lspci` que l'iGPU n'est pas désactivé par OVH avant de
   compter sur le transcodage matériel.
+- Machine suivante : **KS-3 (`24sk302`) ou KS-5 (`24sk50-v1`, Xeon E3-1270 v6, 17,99 € HT, plus
+  rapide mais sans iGPU)**, en France, 2 × 2 To, 32 Go. Prix catalogue lus le 25/10/2026.
+  KS-5-A (`26sk50a-v1`, Xeon E-2274G avec iGPU) : 26,99 € HT = 32,39 € TTC, hors budget.
 - Une tâche planifiée « Alerte stock KS-3 France » (id `trig_01V4YpaVQet8pWAiu7zGQefZ`)
-  surveille le stock via l'API OVH. **À supprimer après la commande du KS-3.**
-  Le script équivalent : `scripts/ks3-stock-check.sh` (code retour 0 = disponible).
+  surveille le stock via l'API OVH (KS-3 seulement à ce jour). **À supprimer après la commande.**
+  Le script équivalent : `scripts/ks-stock-check.sh` (KS-3 + KS-5, code retour 0 = disponible).
 
 ## Décisions d'architecture (et pourquoi)
 

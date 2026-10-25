@@ -11,3 +11,4 @@
 | 2026-10-25 | `modules/dev.nix` : `pkgs.claude-code` (non libre, autorisé seul) sur `ks3` uniquement | Installation déclarative ; le CPU de l'Atom ne peut pas l'exécuter | Retirer la ligne puis `rebuild` |
 | 2026-10-25 | `hosts/atom/settings.nix` : `seedbox.enable = true` (sans VPN) | Tester qBittorrent + Prowlarr + Sonarr + Radarr avant les sauvegardes ; torrents libres seulement tant que `vpn = false` | `enable = false` puis `rebuild` |
 | 2026-10-25 | `modules/media.nix` : dossier `/srv/data/media/.corbeille` | Corbeille des *arr : sans elle, une suppression dans Radarr est définitive ; le dossier doit exister pour être accepté | Retirer l'entrée puis `rebuild` (le dossier reste) |
+| 2026-10-25 | `atom` : Jellyfin + partage SMB en lecture seule (`streaming.smb`, via Tailscale) | Tester la lecture directe et le débit réel avant de choisir le serveur suivant | `jellyfin = false; smb = false;` puis `rebuild` |

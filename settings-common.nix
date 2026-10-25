@@ -40,6 +40,7 @@
     seerr = false;
     navidrome = false;
     audiobookshelf = false;
+    smb = false;            # partage SMB en lecture seule de /srv/data/media (VLC, Kodi…), via Tailscale
     publicDomain = null;
   };
 }

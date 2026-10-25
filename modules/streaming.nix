@@ -11,8 +11,8 @@ let
 in
 lib.mkMerge [
   # ---------- Jellyfin : films et séries (port 8096) ----------
-  # Le Xeon E3-1230 v6 n'a pas de puce graphique : pas de transcodage matériel.
-  # Le transcodage logiciel tient 1 à 2 flux 1080p ; la 4K HEVC en transcodage, non.
+  # Transcodage : impossible sur l'Atom ; sur le Xeon E3-1245 v5, iGPU HD P530 (HEVC 8 bits
+  # seulement, à vérifier avec lspci) ou logiciel, 1 à 2 flux 1080p ; la 4K HEVC, non.
   # Stratégie : privilégier la lecture directe (formats choisis dans Sonarr/Radarr,
   # clients compatibles), voir README phase 6.
   (lib.mkIf s.jellyfin {
@@ -54,6 +54,33 @@ lib.mkMerge [
       group = "media";
       host = "0.0.0.0";
       port = 13378; # 8000 laissé libre pour tes side projects
+    };
+  })
+
+  # ---------- Partage SMB en lecture seule (VLC, Kodi, explorateur de fichiers) ----------
+  # Port 445 non ouvert au public : joignable seulement via tailscale0 (interface de
+  # confiance, base.nix), et « hosts allow » limité aux adresses Tailscale en plus.
+  # Mot de passe SMB distinct du compte Linux, à créer une fois : sudo smbpasswd -a <utilisateur>
+  (lib.mkIf s.smb {
+    services.samba = {
+      enable = true;
+      openFirewall = false;
+      settings = {
+        global = {
+          "server string" = settings.hostName;
+          "server min protocol" = "SMB3";
+          "map to guest" = "never";
+          "hosts allow" = "100.64.0.0/10 fd7a:115c:a1e0::/48 127.0.0.1 ::1";
+          "hosts deny" = "ALL";
+          "load printers" = "no";
+        };
+        media = {
+          path = "/srv/data/media";
+          "read only" = "yes";
+          "valid users" = settings.userName;
+          browseable = "yes";
+        };
+      };
     };
   })
 

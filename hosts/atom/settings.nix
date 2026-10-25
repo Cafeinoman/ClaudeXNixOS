@@ -1,5 +1,5 @@
 # Machine "atom" : Kimsufi KS-3 ancien modèle (Atom N2800, 4 Go, 1 x 2 To).
-# Rôle : rodage NixOS, développement avec Claude Code, seedbox. Pas de streaming.
+# Rôle : rodage NixOS, seedbox, et test de la lecture directe (Jellyfin sans transcodage).
 let
   common = import ../../settings-common.nix;
 in
@@ -21,5 +21,11 @@ common // {
     vpn = false;
   };
 
-  # Pas de streaming sur l'Atom : processeur incapable de transcoder, 4 Go de RAM.
+  # Test de la lecture DIRECTE avant de choisir le serveur suivant : le processeur ne peut
+  # pas transcoder. Désactiver le transcodage pour chaque utilisateur dans Jellyfin
+  # (Tableau de bord → Utilisateurs → « Autoriser la lecture nécessitant un transcodage »).
+  streaming = common.streaming // {
+    jellyfin = true;
+    smb = true;
+  };
 }
