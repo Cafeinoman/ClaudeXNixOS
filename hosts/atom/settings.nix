@@ -18,7 +18,7 @@ common // {
     lidarr = false;  # musique (+ ~250 Mo)
     # qBittorrent uniquement via Proton VPN (offre payante + serveur P2P requis).
     # Dépose d'abord le fichier WireGuard sur le serveur : README, phase 4 bis.
-    vpn = false;
+    vpn = true;
   };
 
   # Test de la lecture DIRECTE avant de choisir le serveur suivant : le processeur ne peut
