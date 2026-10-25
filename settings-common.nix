@@ -8,7 +8,8 @@
   # Ta ou tes clés SSH publiques : contenu de ~/.ssh/id_ed25519.pub
   # (sur téléphone : générée par Termius / Blink / JuiceSSH).
   sshKeys = [
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN8oba0QsLg5iTo9N9bHsxwsMahqbHb0FiyoLsd0qYsK telephone"
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN8oba0QsLg5iTo9N9bHsxwsMahqbHb0FiyoLsd0qYsK poste"
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIO76KEnw/mb326hRzN0jzFwD/W85cVuHSbHXw53lz5XI telephone"
   ];
 
   timeZone = "Europe/Paris";
