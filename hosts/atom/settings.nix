@@ -13,7 +13,7 @@ common // {
   lowSpecHardware = true;
 
   seedbox = common.seedbox // {
-    enable = false;  # qBittorrent + Prowlarr + Sonarr + Radarr (~1 Go de RAM)
+    enable = true;   # qBittorrent + Prowlarr + Sonarr + Radarr (~1 Go de RAM)
     bazarr = false;  # sous-titres automatiques (+ ~250 Mo)
     lidarr = false;  # musique (+ ~250 Mo)
     # qBittorrent uniquement via Proton VPN (offre payante + serveur P2P requis).
