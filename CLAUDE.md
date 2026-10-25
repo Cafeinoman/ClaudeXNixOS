@@ -118,6 +118,10 @@ Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent, commande d
   pas encore vérifié. Corbeille des *arr : `/srv/data/media/.corbeille`. Réglages des
   applications **non sauvegardés** (seulement `migrate-app-state.sh export` à la main).
   Tant que `vpn = false` : torrents libres seulement (rappel déjà fait à l'utilisateur).
+- Test streaming sur `atom` (25/10/2026) : SMB + VLC et Jellyfin en lecture directe OK en 1080p
+  et 4K H.264. `tailscaled` ~22 % d'un fil en 1080p, ~52 % en 4K (~8,5 Mbit/s) : pas de 4K à fort
+  débit possible. [Certain] Jellyfin plante parfois en SIGILL (`status=4/ILL`) dans SQLite (CPU
+  sans SSE4.2/POPCNT) ; systemd le relance. Rien à corriger sur l'Atom : réglé par le serveur suivant.
 - Phase 3 (fermer le port 22) : pas avant le 01/11/2026.
 - Suite : phase 4 bis (Proton VPN), phase 7 = sauvegardes (compte B2 plafonds à 0 $, clé age, sujet
   ntfy, `secrets/atom.yaml`) ; puis seedbox + VPN ; puis commande du KS-3 quand il est en stock

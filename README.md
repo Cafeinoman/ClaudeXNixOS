@@ -511,6 +511,11 @@ virtuelles : contrairement à l'Atom, le Xeon gère VT-x.
 - **Pas de Claude Code** : le processeur n'a ni AVX ni SSE4.2/POPCNT, que le binaire de
   Claude Code (compilé avec Bun) exige ; il plante avec « Illegal instruction ». Pareil pour
   tout outil compilé avec Bun.
+- **Jellyfin instable** : la lecture directe fonctionne (testée en 1080p et en 4K H.264, via
+  le navigateur et en SMB avec VLC), mais Jellyfin plante parfois avec « instruction illégale »
+  (`status=4/ILL`) dans sa bibliothèque SQLite, compilée pour des processeurs plus récents.
+  systemd le relance seul. Sur l'Atom, la limite de débit est le chiffrement Tailscale
+  (~50 % d'un fil pour une 4K à ~8,5 Mbit/s), pas Jellyfin.
 - **Pas de VT-x** : pas de machines virtuelles (KVM). Les conteneurs Docker fonctionnent.
 - **CPU lent** : un `rebuild` prend plusieurs minutes, et toute compilation depuis les
   sources est à éviter. Reste sur la branche stable, qui est presque entièrement en
