@@ -94,8 +94,12 @@ Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent, commande d
   du poste), aucun service en échec.
 - [Certain] **Jamais testé en réel** : `ks3`, envoi réel vers B2 ou Proton, tunnel VPN réel,
   iGPU du KS-3.
-- Le CLI Proton Drive (`proton-drive`, ~v0.8) est un binaire précompilé (build `x64-baseline`
-  pour les CPU sans AVX2, ce qui est le cas de l'Atom), lancé via `nix-ld`. Ses options peuvent changer.
+- Le CLI Proton Drive (`proton-drive`, ~v0.8) est un binaire précompilé (build `x64-baseline`),
+  lancé via `nix-ld`. Ses options peuvent changer. [Probable] Le build « baseline » de Bun exige
+  SSE4.2/POPCNT, que l'Atom n'a pas : `sauvegarde-proton` risque de planter sur l'Atom, à tester.
+- [Certain] **Claude Code ne tourne pas sur l'Atom** : le CPU N2800 n'a ni AVX, ni SSE4.2, ni POPCNT
+  (`grep` dans `/proc/cpuinfo` vide). Le paquet `claude-code` n'est installé que si
+  `lowSpecHardware = false` (donc `ks3`). Sur l'Atom, travailler depuis le poste.
 
 ## Avancement
 

@@ -98,9 +98,10 @@ disque. Le mode rescue reste donc la voie à suivre pour avoir le RAID 1.
 2. **Session persistante depuis le téléphone** :
    `mosh TON_USER@atom -- tmux new -A -s main` (ou `@ks3`)
    (mosh survit aux changements de réseau ; tmux garde la session si tu fermes l'app.)
-3. **Claude Code** : installe-le avec l'installeur natif décrit dans la documentation
-   officielle (docs.claude.com). Il fonctionne grâce à `nix-ld`, déjà activé.
-   Lance-le une première fois dans `~/nixos-config` : il lira `CLAUDE.md`.
+3. **Claude Code** (sur `ks3` seulement) : installé par la config (`pkgs.claude-code` dans
+   `modules/dev.nix`, version figée par `flake.lock`). Lance `claude` une première fois dans
+   `~/nixos-config` et connecte ton compte : il lira `CLAUDE.md`. Sur l'Atom, il ne tourne pas
+   (voir « Limites de l'Atom »).
 4. **Premier test du cycle de modification** : ajoute un paquet dans
    `modules/base.nix`, puis `rebuild-check`, `rebuild`, `git commit`.
 
@@ -507,6 +508,9 @@ virtuelles : contrairement à l'Atom, le Xeon gère VT-x.
 
 ## Limites de l'Atom (machine `atom`) à garder en tête
 
+- **Pas de Claude Code** : le processeur n'a ni AVX ni SSE4.2/POPCNT, que le binaire de
+  Claude Code (compilé avec Bun) exige ; il plante avec « Illegal instruction ». Pareil pour
+  tout outil compilé avec Bun.
 - **Pas de VT-x** : pas de machines virtuelles (KVM). Les conteneurs Docker fonctionnent.
 - **CPU lent** : un `rebuild` prend plusieurs minutes, et toute compilation depuis les
   sources est à éviter. Reste sur la branche stable, qui est presque entièrement en
@@ -517,7 +521,6 @@ virtuelles : contrairement à l'Atom, le Xeon gère VT-x.
   |---|---|
   | Système, SSH, Tailscale | 0,4 Go |
   | qBittorrent + Prowlarr + Sonarr + Radarr | 0,8 à 1 Go |
-  | Claude Code | 0,3 à 0,5 Go |
   | Un side project (Node, Python, petit conteneur) | 0,2 à 0,5 Go |
   | Bazarr / Jellyfin (options) | +0,25 / +0,4 Go |
 
