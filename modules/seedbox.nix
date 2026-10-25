@@ -3,7 +3,7 @@
 #
 # Toutes les interfaces web ne sont joignables QUE via Tailscale (aucun port web ouvert
 # au public ; tailscale0 est une interface de confiance dans base.nix).
-{ lib, settings, ... }:
+{ config, lib, settings, ... }:
 let
   cfg = settings.seedbox;
   torrentPort = 50000;
@@ -54,6 +54,43 @@ lib.mkIf cfg.enable (lib.mkMerge [
   (lib.mkIf cfg.bazarr {
     services.bazarr = { enable = true; group = "media"; }; # port 6767
     systemd.services.bazarr.serviceConfig = shared;
+  })
+
+  # ---------- Recyclarr (profils de qualité TRaSH Guides) ----------
+  # Crée et tient à jour dans Sonarr/Radarr les profils « WEB-1080p » et « HD Bluray + WEB »
+  # (formats largement lisibles en direct) et leurs formats personnalisés, chaque nuit.
+  # Les profils sont dans Git ; seules les clés API sont secrètes (sops, secrets/<machine>.yaml :
+  # sonarr_api_key, radarr_api_key). À assigner ensuite aux films/séries dans Sonarr/Radarr.
+  (lib.mkIf cfg.recyclarr {
+    sops.defaultSopsFile = ../secrets/${settings.hostName}.yaml;
+    sops.age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
+    sops.secrets.sonarr_api_key = { };
+    sops.secrets.radarr_api_key = { };
+
+    services.recyclarr = {
+      enable = true;
+      schedule = "*-*-* 05:30:00"; # après la sauvegarde de 04:00
+      configuration = {
+        sonarr.series = {
+          base_url = "http://localhost:8989";
+          api_key._secret = config.sops.secrets.sonarr_api_key.path;
+          quality_definition.type = "series";
+          quality_profiles = [{
+            trash_id = "72dae194fc92bf828f32cde7744e51a1"; # WEB-1080p
+            reset_unmatched_scores.enabled = true;
+          }];
+        };
+        radarr.movies = {
+          base_url = "http://localhost:7878";
+          api_key._secret = config.sops.secrets.radarr_api_key.path;
+          quality_definition.type = "movie";
+          quality_profiles = [{
+            trash_id = "d1d67249d3890e49bc12e275d989a7e9"; # HD Bluray + WEB
+            reset_unmatched_scores.enabled = true;
+          }];
+        };
+      };
+    };
   })
 
   # ---------- Lidarr (musique) ----------

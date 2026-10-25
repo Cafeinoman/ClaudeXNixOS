@@ -23,6 +23,7 @@
     bazarr = false;
     lidarr = false;
     vpn = false;
+    recyclarr = false; # profils de qualité TRaSH pour Sonarr/Radarr (clés API dans secrets/<machine>.yaml)
   };
 
   # Sauvegardes (README, « Sauvegardes ») : à activer une fois les secrets créés.

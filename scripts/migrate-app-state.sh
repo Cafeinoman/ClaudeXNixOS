@@ -24,7 +24,7 @@ set -euo pipefail
 SERVICES=(sonarr radarr prowlarr qbittorrent bazarr lidarr jellyfin seerr navidrome audiobookshelf)
 DIRS=(
   /var/lib/sonarr /var/lib/radarr /var/lib/private/prowlarr /var/lib/qBittorrent
-  /var/lib/bazarr /var/lib/lidarr /var/lib/jellyfin /var/lib/seerr
+  /var/lib/bazarr /var/lib/lidarr /var/lib/jellyfin /var/lib/private/seerr
   /var/lib/navidrome /var/lib/audiobookshelf
 )
 

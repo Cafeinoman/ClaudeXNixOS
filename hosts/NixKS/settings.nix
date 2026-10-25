@@ -17,6 +17,7 @@ common // {
     bazarr = false;
     lidarr = false;
     vpn = false;
+    recyclarr = false;
   };
 
   streaming = common.streaming // {

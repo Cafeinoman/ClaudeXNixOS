@@ -19,6 +19,8 @@ common // {
     # qBittorrent uniquement via Proton VPN (offre payante + serveur P2P requis).
     # Dépose d'abord le fichier WireGuard sur le serveur : README, phase 4 bis.
     vpn = true;
+    # Clés API de Sonarr et Radarr à ajouter AVANT le rebuild : sops secrets/atom.yaml
+    recyclarr = true;
   };
 
   # Test de la lecture DIRECTE avant de choisir le serveur suivant : le processeur ne peut
@@ -33,6 +35,7 @@ common // {
 
   streaming = common.streaming // {
     jellyfin = true;
+    seerr = true;
     smb = true;
   };
 }

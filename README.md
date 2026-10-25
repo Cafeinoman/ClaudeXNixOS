@@ -236,8 +236,8 @@ fait partie : tu peux gérer les fichiers en SFTP.
 | Quoi | Où | Comment c'est protégé |
 |---|---|---|
 | Quels services tournent, ports, chemins, VPN, droits | `*.nix` | **Git** |
-| Réglages faits dans les interfaces (indexeurs, profils, clés API, comptes, historique) | bases SQLite dans `/var/lib/<service>` | **Archive** (`migrate-app-state.sh`), plus tard sauvegarde chiffrée |
-| Profils de qualité Sonarr/Radarr | (à venir) fichier YAML Recyclarr | **Git**, une fois Recyclarr ajouté |
+| Réglages faits dans les interfaces (indexeurs, profils, clés API, comptes, historique) | bases SQLite dans `/var/lib/<service>` | **Archive** (`migrate-app-state.sh`) et sauvegarde B2 chiffrée |
+| Profils de qualité Sonarr/Radarr | Recyclarr (`seedbox.recyclarr`, `modules/seedbox.nix`) | **Git** ; clés API dans `secrets/<machine>.yaml` (sops) |
 
 Pourquoi les bases ne vont pas dans Git : ce sont des fichiers binaires qui changent
 à chaque synchronisation (Git stockerait une copie complète à chaque commit, sans
@@ -540,11 +540,9 @@ Classées par utilité pour toi :
 1. **Fichier Proton VPN dans sops-nix** — sops-nix est en place pour les sauvegardes ;
    le fichier WireGuard de Proton pourrait y passer aussi, pour ne plus le redéposer à
    la main après une réinstallation.
-2. **Recyclarr** — applique automatiquement à Sonarr/Radarr les profils de qualité
-   recommandés par TRaSH Guides, dont des profils « compatibles lecture directe »
-   (H.264, pas de HEVC 4K) : c'est le levier n°1 contre le transcodage sans GPU.
-   Le module NixOS existe. À ajouter une fois les clés API des *arr connues (elles sont
-   dans l'état des applications, hors de Git : prévoir de les passer par sops-nix).
+2. (Fait : Recyclarr, `seedbox.recyclarr = true`, profils TRaSH « WEB-1080p » et
+   « HD Bluray + WEB ». Variante française MULTi/VF possible plus tard : profils TRaSH
+   « french », à choisir par leur `trash_id`.)
 3. **Prétranscodage nocturne** (Tdarr ou Unmanic, en conteneur) — convertit la nuit
    les fichiers problématiques (HEVC, sous-titres PGS) en formats lisibles partout.
    Coûteux en CPU et en temps, mais le Xeon peut tourner la nuit. Utile seulement si
