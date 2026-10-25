@@ -11,8 +11,8 @@ let
 in
 lib.mkMerge [
   # ---------- Jellyfin : films et séries (port 8096) ----------
-  # Transcodage : impossible sur l'Atom ; sur le Xeon E3-1245 v5, iGPU HD P530 (HEVC 8 bits
-  # seulement, à vérifier avec lspci) ou logiciel, 1 à 2 flux 1080p ; la 4K HEVC, non.
+  # Transcodage : impossible sur l'Atom ; sur NixKS (Xeon E3-1270 v6, sans iGPU), logiciel
+  # seulement, 2 à 3 flux 1080p H.264 ; la 4K HEVC, non.
   # Stratégie : privilégier la lecture directe (formats choisis dans Sonarr/Radarr,
   # clients compatibles), voir README phase 6.
   (lib.mkIf s.jellyfin {

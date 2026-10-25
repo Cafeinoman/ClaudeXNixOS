@@ -1,12 +1,13 @@
-# Machine "ks3" : Kimsufi KS-3 (Xeon E3-1245 v5, 32 Go, 2 x 2 To en RAID 1).
+# Machine "NixKS" : Kimsufi KS-5 (Xeon E3-1270 v6, sans iGPU, 32 Go, 2 x 2 To en RAID 1).
 # Rôle : serveur principal (développement, seedbox, streaming).
 let
   common = import ../../settings-common.nix;
 in
 common // {
-  hostName = "ks3";
+  hostName = "NixKS";
 
   # Deux disques → RAID 1 logiciel (miroir mdadm), 2 To utiles. ILS SERONT EFFACÉS.
+  # Noms à confirmer avec `lsblk` dans le rescue.
   disks = [ "/dev/sda" "/dev/sdb" ];
 
   lowSpecHardware = false;

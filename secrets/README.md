@@ -23,7 +23,7 @@ modifier les secrets si le serveur disparaît.
 nix shell nixpkgs#ssh-to-age -c sh -c 'ssh-to-age < /etc/ssh/ssh_host_ed25519_key.pub'
 ```
 
-Mets le résultat (`age1...`) à la place de `age1CHANGE_ME_cle_atom` (ou `_ks3`) dans
+Mets le résultat (`age1...`) à la place de `age1CHANGE_ME_cle_atom` (ou `_NixKS`) dans
 `.sops.yaml`.
 
 ## Le mot de passe restic
@@ -42,7 +42,7 @@ chiffré avec ce mot de passe. Sans lui, la sauvegarde est illisible, y compris 
 
 ```bash
 cd ~/Projets/NixServer          # sur le poste (ou ~/nixos-config sur un serveur, avec nix shell nixpkgs#sops)
-sops secrets/atom.yaml          # ou ks3.yaml
+sops secrets/atom.yaml          # ou NixKS.yaml
 ```
 
 Contenu à saisir (l'éditeur s'ouvre ; à l'enregistrement, sops chiffre) :

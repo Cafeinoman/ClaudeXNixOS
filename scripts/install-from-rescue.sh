@@ -3,7 +3,7 @@
 #
 # Usage (en root, dans le rescue) :
 #   cd nixos-config && bash scripts/install-from-rescue.sh <machine>
-#   <machine> = un dossier de hosts/ : atom ou ks3
+#   <machine> = un dossier de hosts/ : atom ou NixKS
 #
 # Étapes : vérifications → réseau détecté → Nix installé dans le rescue
 #          → disques EFFACÉS et partitionnés (disko) → NixOS installé → mot de passe.

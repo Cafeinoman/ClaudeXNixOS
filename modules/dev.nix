@@ -3,7 +3,7 @@
 let
   # Claude Code est un binaire compilé avec Bun : il exige au moins SSE4.2/POPCNT, et en
   # pratique AVX. L'Atom N2800 n'a aucun des trois (`grep -w avx /proc/cpuinfo` vide) :
-  # « Illegal instruction ». Donc seulement sur le Xeon (ks3), qui a l'AVX2.
+  # « Illegal instruction ». Donc seulement sur le Xeon (NixKS), qui a l'AVX2.
   claudeCode = !settings.lowSpecHardware;
 in
 {

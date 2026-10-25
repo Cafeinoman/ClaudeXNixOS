@@ -46,14 +46,13 @@ Singapour, Canada, Varsovie exclus).
 
 | Machine | Matériel | Rôle |
 |---|---|---|
-| `atom` (déjà louée) | KS-3 ancien : Atom N2800, 4 Go, 1 × 2 To, pas de VT-x, pas de transcodage | rodage de la config, dev, seedbox ; **pas de streaming** |
-| `ks3` (pas encore commandée) | KS-3 : Xeon E3-1245 v5, 32 Go, 2 × 2 To en RAID 1 mdadm, iGPU HD P530 (HEVC 8 bits seulement) | serveur principal : dev + seedbox + streaming |
+| `atom` (déjà louée) | KS-3 ancien : Atom N2800, 4 Go, 1 × 2 To, pas de VT-x, ni AVX ni SSE4.2 | rodage, seedbox + VPN, sauvegarde B2 ; Jellyfin et SMB en lecture directe (Jellyfin instable : SQLite en SIGILL) ; **pas de Claude Code** |
+| `NixKS` (pas encore commandée) | KS-5 : Xeon E3-1270 v6 (4 c / 8 f, AVX2, **sans iGPU**), 32 Go, 2 × 2 To en RAID 1 mdadm | serveur principal : dev + seedbox + streaming |
 
-- Pour `ks3` : vérifier avec `lspci` que l'iGPU n'est pas désactivé par OVH avant de
-  compter sur le transcodage matériel.
+- Nom Tailscale / DNS de `NixKS` : `nixks` (les noms d'hôte sont insensibles à la casse).
 - Machine suivante : **KS-5 (`24sk50-v1`, Xeon E3-1270 v6, 4 cœurs / 8 fils, sans iGPU donc
   transcodage logiciel seulement)**, 2 × 2 To HDD, 32 Go, 17,99 € HT = 21,59 € TTC (catalogue du
-  25/10/2026). Datacenters : gra, rbx, sbg, lon, fra. La config porte encore le nom `ks3`.
+  25/10/2026). Datacenters : gra, rbx, sbg, lon, fra. Config : `hosts/NixKS/`.
   KS-5-A (`26sk50a-v1`, Xeon E-2274G avec iGPU) : 26,99 € HT = 32,39 € TTC, hors budget.
 - Une tâche planifiée d'alerte de stock (id `trig_01V4YpaVQet8pWAiu7zGQefZ`) surveille l'API OVH ;
   son prompt est modifié à la main par l'utilisateur. **À supprimer après la commande.**
@@ -96,24 +95,23 @@ Singapour, Canada, Varsovie exclus).
 - [Certain] **`atom` installé et démarré le 24/10/2026** (NixOS 26.05, nixpkgs `da6dc0e`,
   `flake.lock` et fichiers générés commités). Démarrage en 30 s, SSH par clé OK (clé `~/.ssh/nix`
   du poste), aucun service en échec.
-- [Certain] **Jamais testé en réel** : `ks3`, envoi réel vers B2 ou Proton, tunnel VPN réel,
-  iGPU du KS-3.
+- [Certain] **Jamais testé en réel** : `NixKS`, copie Proton Drive.
 - Le CLI Proton Drive (`proton-drive`, ~v0.8) est un binaire précompilé (build `x64-baseline`),
   lancé via `nix-ld`. Ses options peuvent changer. [Probable] Le build « baseline » de Bun exige
   SSE4.2/POPCNT, que l'Atom n'a pas : `sauvegarde-proton` risque de planter sur l'Atom, à tester.
 - [Certain] **Claude Code ne tourne pas sur l'Atom** : le CPU N2800 n'a ni AVX, ni SSE4.2, ni POPCNT
   (`grep` dans `/proc/cpuinfo` vide). Le paquet `claude-code` n'est installé que si
-  `lowSpecHardware = false` (donc `ks3`). Sur l'Atom, travailler depuis le poste.
+  `lowSpecHardware = false` (donc `NixKS`). Sur l'Atom, travailler depuis le poste.
 
 ## Avancement
 
 - Phase 0 : faite (dépôt public `github.com/Cafeinoman/ClaudeXNixOS`, commits en
   `Cafeinoman@users.noreply.github.com`, `settings-common.nix` rempli, README corrigé ;
-  `atom` et `ks3` évalués avec le `flake.lock` du 24/10/2026, shellcheck propre).
+  `atom` et le Xeon (alors `ks3`, aujourd'hui `NixKS`) évalués avec le `flake.lock` du 24/10/2026).
 - Phase 1 : `atom` installé depuis le rescue avec `TEMP_SWAP=/dev/sda3` (partition provisoire
   de 8 Go créée à la main) et `NIX_CONFIG="max-jobs = 1 / cores = 1"`.
 - Phase 2 : faite (Tailscale, mosh + tmux depuis le téléphone, clé du téléphone ajoutée).
-  Claude Code impossible sur l'Atom (CPU) : prévu pour `ks3` uniquement.
+  Claude Code impossible sur l'Atom (CPU) : prévu pour `NixKS` uniquement.
 - Phase 4 : seedbox active sur `atom` **sans VPN** (qBittorrent, Prowlarr, Sonarr, Radarr).
   Chaîne Prowlarr → Radarr → qBittorrent → import validée le 25/10/2026 ; lien physique
   pas encore vérifié. Corbeille des *arr : `/srv/data/media/.corbeille`. Réglages des
@@ -138,8 +136,8 @@ Singapour, Canada, Varsovie exclus).
 2. Tester une **restauration** B2 une fois (README, « Restaurer »), avant d'en avoir besoin.
 3. Première semaine : surveiller la console B2 (« Caps & Alerts ») et la taille du dépôt.
 4. Vérifier le **lien physique** au prochain import Radarr (même inode dans `torrents/` et `media/`).
-5. Machine suivante (KS-3 `24sk302` ou KS-5 `24sk50-v1`) : à la commande, supprimer la routine
-   d'alerte de stock ; adapter `hosts/ks3/` au matériel réel ; installation avec
+5. Machine suivante, `NixKS` (KS-5 `24sk50-v1`) : à la commande, supprimer la routine
+   d'alerte de stock ; confirmer `disks` avec `lsblk` dans le rescue ; installation avec
    `install-from-rescue.sh` (32 Go : `TEMP_SWAP` inutile) ; clé age de la nouvelle machine dans
    `.sops.yaml` + `sops updatekeys`. **Avant le déménagement** : `migrate-app-state.sh export` et une
    sauvegarde B2 récente (`sauvegarde-proton` est impossible sur l'Atom) ; redéposer
@@ -193,7 +191,7 @@ Ce dépôt (`~/nixos-config`) EST la configuration du serveur. Tout ce qui n'y e
 écrit sera perdu à la prochaine reconstruction. Lis ce fichier en début de session.
 
 ## Système (NixOS, géré par flake)
-- Deux machines : `atom` et `ks3` (`hosts/<machine>/`). Le nom de la machine courante :
+- Deux machines : `atom` et `NixKS` (`hosts/<machine>/`). Le nom de la machine courante :
   `hostname`. Les alias `rebuild*` visent automatiquement la bonne machine.
 - Réglages : `settings-common.nix` (commun) et `hosts/<machine>/settings.nix`.
 - Ne jamais installer de logiciel système à la main (pas de `nix-env -i`, pas de

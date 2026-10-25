@@ -5,9 +5,9 @@ depuis un téléphone pour Claude Code, des side projects, une seedbox et du str
 
 ```
 settings-common.nix           ← réglages communs (utilisateur, clés SSH) : à remplir
-flake.nix                     ← point d'entrée : deux machines, atom et ks3
+flake.nix                     ← point d'entrée : deux machines, atom et NixKS
 hosts/atom/settings.nix       ← Atom N2800 : rodage, dev, seedbox (pas de streaming)
-hosts/ks3/settings.nix        ← KS-3 Xeon 1245 v5 : serveur principal, RAID 1
+hosts/NixKS/settings.nix      ← KS-5 Xeon E3-1270 v6 : serveur principal, RAID 1
 hosts/<machine>/network.nix   ← généré à l'installation (IP fixe lue dans le rescue)
 hosts/<machine>/hardware-configuration.nix  ← généré à l'installation
 modules/system.nix            ← socle commun (démarrage, imports)
@@ -43,14 +43,14 @@ CHANGELOG.md                  ← journal des changements système
    | Serveur | `disks` | `lowSpecHardware` |
    |---|---|---|
    | `atom` : KS-3 ancien modèle (Atom N2800, 4 Go, 1 × 2 To) | `[ "/dev/sda" ]` | `true` |
-   | `ks3` : KS-3 Xeon E3-1245 v5 (32 Go, 2 × 2 To) | `[ "/dev/sda" "/dev/sdb" ]` | `false` |
+   | `NixKS` : KS-5 Xeon E3-1270 v6 (32 Go, 2 × 2 To) | `[ "/dev/sda" "/dev/sdb" ]` | `false` |
 
    Avec deux disques, la config crée un **RAID 1 logiciel** (miroir mdadm) : 2 To
    utiles, et le serveur continue de tourner (et redémarre seul) si un disque meurt.
 
 ### Pourquoi pas « Bring Your Own Image » / « Bring Your Own Linux » ?
 
-Le manager les propose pour le KS-3 (Atom comme Xeon), mais être proposé ne lève pas les contraintes
+Le manager les propose pour les Kimsufi (l'Atom comme le KS-5), mais être proposé ne lève pas les contraintes
 de la documentation OVH. Les deux modes écrivent une image qcow2 sur le disque, et
 sur l'Atom (4 Go) ils coincent :
 - l'image doit faire **moins que la RAM moins 3 Gio**, soit moins de 1 Gio sur l'Atom ;
@@ -77,7 +77,7 @@ disque. Le mode rescue reste donc la voie à suivre pour avoir le RAID 1.
    apt-get update && apt-get install -y git
    git clone https://github.com/TOI/nixos-config.git
    cd nixos-config
-   bash scripts/install-from-rescue.sh atom     # ou ks3
+   bash scripts/install-from-rescue.sh atom     # ou NixKS
    ```
    Le script vérifie tout et évalue la configuration **avant** d'effacer le disque.
    Il demande de taper `EFFACER`, puis le mot de passe de ton utilisateur (pour sudo).
@@ -94,11 +94,11 @@ disque. Le mode rescue reste donc la voie à suivre pour avoir le RAID 1.
 
 1. **Tailscale** : `sudo tailscale up` puis ouvre le lien affiché pour lier le serveur
    à ton compte. Installe Tailscale sur le téléphone. Le serveur devient joignable
-   sous son nom (`atom` ou `ks3`), même port 22 fermé.
+   sous son nom (`atom` ou `nixks`), même port 22 fermé.
 2. **Session persistante depuis le téléphone** :
-   `mosh TON_USER@atom -- tmux new -A -s main` (ou `@ks3`)
+   `mosh TON_USER@atom -- tmux new -A -s main` (ou `@nixks`)
    (mosh survit aux changements de réseau ; tmux garde la session si tu fermes l'app.)
-3. **Claude Code** (sur `ks3` seulement) : installé par la config (`pkgs.claude-code` dans
+3. **Claude Code** (sur `NixKS` seulement) : installé par la config (`pkgs.claude-code` dans
    `modules/dev.nix`, version figée par `flake.lock`). Lance `claude` une première fois dans
    `~/nixos-config` et connecte ton compte : il lira `CLAUDE.md`. Sur l'Atom, il ne tourne pas
    (voir « Limites de l'Atom »).
@@ -184,7 +184,7 @@ partagerais mal, et le ratio s'effondrerait.
   Proton. Génère-en une nouvelle et remplace le fichier, puis
   `sudo systemctl restart proton qbittorrent proton-port-forward`.
 
-`<machine>` = `atom` ou `ks3` selon le serveur (noms Tailscale).
+`<machine>` = `atom` ou `nixks` selon le serveur (noms Tailscale, en minuscules).
 
 | Service | Rôle | Adresse (via Tailscale) |
 |---|---|---|
@@ -244,13 +244,13 @@ Pourquoi les bases ne vont pas dans Git : ce sont des fichiers binaires qui chan
 diff lisible), qu'il faut arrêter le service pour copier proprement, et qui
 contiennent des secrets en clair (clés API, cookies d'indexeurs).
 
-**Déménagement Atom → KS-3** :
-1. Sur `ks3`, active les mêmes services que sur `atom` dans `hosts/ks3/settings.nix`,
+**Déménagement Atom → NixKS** :
+1. Sur `NixKS`, active les mêmes services que sur `atom` dans `hosts/NixKS/settings.nix`,
    puis `rebuild`.
 2. Sur `atom` : `sudo bash scripts/migrate-app-state.sh export`
-3. `scp ~/app-state-*.tar.gz ks3:` (via Tailscale)
-4. Sur `ks3` : `sudo bash scripts/migrate-app-state.sh import ~/app-state-atom-….tar.gz`
-5. Données, si utile : `rsync -aP atom:/srv/data/ /srv/data/` (depuis `ks3`).
+3. `scp ~/app-state-*.tar.gz nixks:` (via Tailscale)
+4. Sur `NixKS` : `sudo bash scripts/migrate-app-state.sh import ~/app-state-atom-….tar.gz`
+5. Données, si utile : `rsync -aP atom:/srv/data/ /srv/data/` (depuis `NixKS`).
 6. Supprime l'archive des deux côtés (`shred -u`).
 
 Les chemins sont identiques sur les deux machines (`/srv/data/...`, adresse de
@@ -286,16 +286,16 @@ lis les notes de version, puis le cycle ci-dessus. Ne touche pas à `system.stat
 
 ### Ce que le matériel permet
 
-Le point qui décide de tout : le **Xeon E3-1230 v6 n'a pas de puce graphique** (les
-modèles « 5 » de la gamme, comme le 1245 v6, en ont une ; le 1230 non). Donc **pas de
-transcodage matériel** (Quick Sync). Vérification sur le serveur : `ls /dev/dri`
-doit être vide ou absent.
+Le point qui décide de tout : le **Xeon E3-1270 v6 du KS-5 (`NixKS`) n'a pas de puce
+graphique** (les modèles « 5 » de la gamme, comme le 1275 v6, en ont une ; le 1270 non).
+Donc **pas de transcodage matériel** (Quick Sync). Vérification sur le serveur :
+`ls /dev/dri` doit être vide ou absent.
 
 Conséquences :
 - **Lecture directe** (le client lit le fichier tel quel) : aucune charge CPU, autant
   de flux que la bande passante le permet. C'est le mode à viser.
 - **Transcodage logiciel** (le serveur réencode à la volée) : 4 cœurs / 8 threads
-  tiennent environ **1 à 2 flux 1080p H.264**. Un transcodage **4K HEVC est hors de
+  tiennent environ **2 à 3 flux 1080p H.264**. Un transcodage **4K HEVC est hors de
   portée**.
 - **Bande passante sortante** : elle limite le nombre de flux simultanés hors de
   chez toi. Un film 1080p en lecture directe demande 8 à 20 Mbit/s ; vérifie le débit
@@ -439,7 +439,7 @@ sauvegarde-proton login     # si la session Proton a expiré
 ```
 
 Bons moments pour la lancer : avant une grosse modification (mise à jour NixOS, nouveau
-service), avant le déménagement vers le KS-3, et au moins une fois par mois. La
+service), avant le déménagement vers `NixKS`, et au moins une fois par mois. La
 commande vérifie d'abord la session Proton : si elle a expiré, elle s'arrête **avant**
 d'arrêter les applications et te dit de te reconnecter. Les 4 dernières archives sont
 conservées.
@@ -559,7 +559,7 @@ sur le Xeon si un indexeur l'exige), **Readarr** (plus maintenu), le transcodage
 ## Ce qui n'a pas été testé
 
 La configuration a été évaluée avec succès (NixOS 26.05 ; profil par défaut, profil
-`atom` avec tout activé, profil `ks3` (Xeon) RAID 1 avec tout activé et Jellyfin public ; aucun
+`atom` avec tout activé, profil Xeon RAID 1 (alors nommé `ks3`) avec tout activé et Jellyfin public ; aucun
 avertissement), le script d'installation et le service de redirection de port
 passent `shellcheck`. Un
 `nix build --dry-run` confirme que tous les logiciels viennent du cache binaire

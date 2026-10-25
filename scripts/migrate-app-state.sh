@@ -10,9 +10,9 @@
 #      sudo bash scripts/migrate-app-state.sh export
 #    → crée ~/app-state-<machine>-<date>.tar.gz (services arrêtés le temps de la copie)
 # 2. Copie le fichier vers la nouvelle machine (via Tailscale) :
-#      scp ~/app-state-*.tar.gz ks3:
-# 3. Sur la nouvelle machine (ex. ks3), APRÈS avoir activé les mêmes services dans
-#    hosts/ks3/settings.nix et fait un `rebuild` :
+#      scp ~/app-state-*.tar.gz nixks:
+# 3. Sur la nouvelle machine (ex. NixKS), APRÈS avoir activé les mêmes services dans
+#    hosts/NixKS/settings.nix et fait un `rebuild` :
 #      sudo bash scripts/migrate-app-state.sh import ~/app-state-atom-....tar.gz
 # 4. Données (téléchargements, médias), si besoin, en tant que ton utilisateur :
 #      rsync -aP --info=progress2 atom:/srv/data/ /srv/data/

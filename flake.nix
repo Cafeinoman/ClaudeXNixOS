@@ -40,7 +40,7 @@
     {
       nixosConfigurations = {
         atom = mkHost "atom"; # ancien KS-3 Atom : rodage, dev, seedbox
-        ks3 = mkHost "ks3";   # KS-3 Xeon 1245 v5 : serveur principal
+        NixKS = mkHost "NixKS"; # KS-5 Xeon E3-1270 v6 : serveur principal
       };
     };
 }
