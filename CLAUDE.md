@@ -126,11 +126,25 @@ Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent, commande d
   et 4K H.264. `tailscaled` ~22 % d'un fil en 1080p, ~52 % en 4K (~8,5 Mbit/s) : pas de 4K à fort
   débit possible. [Certain] Jellyfin plante parfois en SIGILL (`status=4/ILL`) dans SQLite (CPU
   sans SSE4.2/POPCNT) ; systemd le relance. Rien à corriger sur l'Atom : réglé par le serveur suivant.
-- Phase 3 (fermer le port 22) : pas avant le 01/11/2026.
-- Suite : phase 7 = sauvegardes (compte B2 plafonds à 0 $, clé age, sujet
-  ntfy, `secrets/atom.yaml`) ; puis seedbox + VPN ; puis commande du KS-3 quand il est en stock
-  en France, et migration avec `migrate-app-state.sh`. **Lancer `sauvegarde-proton` avant tout
-  déménagement Atom → KS-3.**
+- Phase 7 : faite le 25/10/2026 sur `atom`. restic → B2 (`b2:NixOS-save:atom`) chaque nuit à 04:00,
+  première sauvegarde manuelle réussie, alerte ntfy testée. Secrets dans `secrets/atom.yaml`
+  (vérifié chiffré). Pas de copie Proton sur l'Atom (CLI Bun incompatible avec le CPU).
+
+## Reste à faire
+
+1. Phase 3 : retirer le port 22 (`modules/base.nix`), **pas avant le 01/11/2026**,
+   `rebuild-test` d'abord, vérification depuis le téléphone via Tailscale, puis `rebuild`.
+2. Tester une **restauration** B2 une fois (README, « Restaurer »), avant d'en avoir besoin.
+3. Première semaine : surveiller la console B2 (« Caps & Alerts ») et la taille du dépôt.
+4. Vérifier le **lien physique** au prochain import Radarr (même inode dans `torrents/` et `media/`).
+5. Machine suivante (KS-3 `24sk302` ou KS-5 `24sk50-v1`) : à la commande, supprimer la routine
+   d'alerte de stock ; adapter `hosts/ks3/` au matériel réel ; installation avec
+   `install-from-rescue.sh` (32 Go : `TEMP_SWAP` inutile) ; clé age de la nouvelle machine dans
+   `.sops.yaml` + `sops updatekeys`. **Avant le déménagement** : `migrate-app-state.sh export` et une
+   sauvegarde B2 récente (`sauvegarde-proton` est impossible sur l'Atom) ; redéposer
+   `/var/lib/secrets/proton.conf` sur la nouvelle machine.
+6. Décembre 2026 : passer à NixOS 26.11 (26.05 supporté jusqu'au 31/12/2026).
+7. Suggestions du README : `proton.conf` dans sops-nix, Recyclarr, plugins Jellyfin.
 
 ## Le rescue OVH de l'Atom (leçons de l'installation)
 
