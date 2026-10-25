@@ -8,6 +8,7 @@
 #   /srv/data/media/tv, movies             ← Sonarr / Radarr  → Jellyfin
 #   /srv/data/media/music                  ← Lidarr           → Navidrome
 #   /srv/data/media/audiobooks, podcasts   ← dépôt manuel (SFTP) → Audiobookshelf
+#   /srv/data/media/.corbeille             ← corbeille de Sonarr/Radarr/Lidarr (Recycling Bin)
 { lib, settings, ... }:
 let
   s = settings.streaming;
@@ -16,7 +17,7 @@ let
   dirs = [
     "" "/torrents" "/torrents/tv" "/torrents/movies" "/torrents/music"
     "/media" "/media/tv" "/media/movies" "/media/music"
-    "/media/audiobooks" "/media/podcasts"
+    "/media/audiobooks" "/media/podcasts" "/media/.corbeille"
   ];
 in
 lib.mkIf enabled {
