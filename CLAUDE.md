@@ -108,7 +108,15 @@ Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent, commande d
   `atom` et `ks3` évalués avec le `flake.lock` du 24/10/2026, shellcheck propre).
 - Phase 1 : `atom` installé depuis le rescue avec `TEMP_SWAP=/dev/sda3` (partition provisoire
   de 8 Go créée à la main) et `NIX_CONFIG="max-jobs = 1 / cores = 1"`.
-- Suite : phase 2 (Tailscale), phase 7 = sauvegardes (compte B2 plafonds à 0 $, clé age, sujet
+- Phase 2 : faite (Tailscale, mosh + tmux depuis le téléphone, clé du téléphone ajoutée).
+  Claude Code impossible sur l'Atom (CPU) : prévu pour `ks3` uniquement.
+- Phase 4 : seedbox active sur `atom` **sans VPN** (qBittorrent, Prowlarr, Sonarr, Radarr).
+  Chaîne Prowlarr → Radarr → qBittorrent → import validée le 25/10/2026 ; lien physique
+  pas encore vérifié. Corbeille des *arr : `/srv/data/media/.corbeille`. Réglages des
+  applications **non sauvegardés** (seulement `migrate-app-state.sh export` à la main).
+  Tant que `vpn = false` : torrents libres seulement (rappel déjà fait à l'utilisateur).
+- Phase 3 (fermer le port 22) : pas avant le 01/11/2026.
+- Suite : phase 4 bis (Proton VPN), phase 7 = sauvegardes (compte B2 plafonds à 0 $, clé age, sujet
   ntfy, `secrets/atom.yaml`) ; puis seedbox + VPN ; puis commande du KS-3 quand il est en stock
   en France, et migration avec `migrate-app-state.sh`. **Lancer `sauvegarde-proton` avant tout
   déménagement Atom → KS-3.**
