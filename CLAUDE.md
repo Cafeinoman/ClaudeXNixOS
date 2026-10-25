@@ -36,11 +36,11 @@ qui sert à :
 - travailler à distance avec Claude Code **depuis le téléphone** (SSH/mosh via Tailscale) ;
 - tester des side projects (Docker rootless, direnv) ;
 - seedbox **Servarr** derrière **Proton VPN** ;
-- streaming (Jellyfin, Seerr, Navidrome, Audiobookshelf), seulement sur le KS-3 Xeon.
+- streaming (Jellyfin, Seerr, Navidrome, Audiobookshelf), sur la machine Xeon suivante.
 
-Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent, commande du KS-3
-**uniquement s'il est en stock en France** (Sydney exclu : 300 Mbit/s, quota 5 To puis
-10 Mbit/s, latence).
+Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent. Machine visée depuis le
+25/10/2026 : **KS-5**, dans un datacenter en **France, à Londres ou à Francfort** (Sydney,
+Singapour, Canada, Varsovie exclus).
 
 ## Deux machines, un dépôt
 
@@ -51,12 +51,13 @@ Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent, commande d
 
 - Pour `ks3` : vérifier avec `lspci` que l'iGPU n'est pas désactivé par OVH avant de
   compter sur le transcodage matériel.
-- Machine suivante : **KS-3 (`24sk302`) ou KS-5 (`24sk50-v1`, Xeon E3-1270 v6, 17,99 € HT, plus
-  rapide mais sans iGPU)**, en France, 2 × 2 To, 32 Go. Prix catalogue lus le 25/10/2026.
+- Machine suivante : **KS-5 (`24sk50-v1`, Xeon E3-1270 v6, 4 cœurs / 8 fils, sans iGPU donc
+  transcodage logiciel seulement)**, 2 × 2 To HDD, 32 Go, 17,99 € HT = 21,59 € TTC (catalogue du
+  25/10/2026). Datacenters : gra, rbx, sbg, lon, fra. La config porte encore le nom `ks3`.
   KS-5-A (`26sk50a-v1`, Xeon E-2274G avec iGPU) : 26,99 € HT = 32,39 € TTC, hors budget.
-- Une tâche planifiée « Alerte stock KS-3 France » (id `trig_01V4YpaVQet8pWAiu7zGQefZ`)
-  surveille le stock via l'API OVH (KS-3 seulement à ce jour). **À supprimer après la commande.**
-  Le script équivalent : `scripts/ks-stock-check.sh` (KS-3 + KS-5, code retour 0 = disponible).
+- Une tâche planifiée d'alerte de stock (id `trig_01V4YpaVQet8pWAiu7zGQefZ`) surveille l'API OVH ;
+  son prompt est modifié à la main par l'utilisateur. **À supprimer après la commande.**
+  Le script équivalent : `scripts/ks-stock-check.sh` (KS-5, code retour 0 = disponible).
 
 ## Décisions d'architecture (et pourquoi)
 
