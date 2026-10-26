@@ -57,8 +57,11 @@ lib.mkIf cfg.enable (lib.mkMerge [
   })
 
   # ---------- Recyclarr (profils de qualité TRaSH Guides) ----------
-  # Crée et tient à jour dans Sonarr/Radarr les profils « WEB-1080p » et « HD Bluray + WEB »
-  # (formats largement lisibles en direct) et leurs formats personnalisés, chaque nuit.
+  # Crée et tient à jour dans Sonarr/Radarr les profils TRaSH FRANÇAIS en 1080p (lisibles en
+  # direct) et leurs formats personnalisés, chaque nuit :
+  #   - MULTi.VF : piste audio française (le choix par défaut) ;
+  #   - VOSTFR   : audio d'origine + sous-titres français.
+  # Les profils anglais (« WEB-1080p », « HD Bluray + WEB ») ne privilégient aucune langue.
   # Les profils sont dans Git ; seules les clés API sont secrètes (sops, secrets/<machine>.yaml :
   # sonarr_api_key, radarr_api_key). À assigner ensuite aux films/séries dans Sonarr/Radarr.
   (lib.mkIf cfg.recyclarr {
@@ -75,19 +78,23 @@ lib.mkIf cfg.enable (lib.mkMerge [
           base_url = "http://localhost:8989";
           api_key._secret = config.sops.secrets.sonarr_api_key.path;
           quality_definition.type = "series";
-          quality_profiles = [{
-            trash_id = "72dae194fc92bf828f32cde7744e51a1"; # WEB-1080p
-            reset_unmatched_scores.enabled = true;
-          }];
+          quality_profiles = [
+            { trash_id = "58e8dc75731040612dd6f4ac0676bfd7"; # [French MULTi.VF] HD Bluray + WEB (1080p)
+              reset_unmatched_scores.enabled = true; }
+            { trash_id = "b34c968f58433a38e0e690d42a1dc37e"; # [French VOSTFR] HD Bluray + WEB (1080p)
+              reset_unmatched_scores.enabled = true; }
+          ];
         };
         radarr.movies = {
           base_url = "http://localhost:7878";
           api_key._secret = config.sops.secrets.radarr_api_key.path;
           quality_definition.type = "movie";
-          quality_profiles = [{
-            trash_id = "d1d67249d3890e49bc12e275d989a7e9"; # HD Bluray + WEB
-            reset_unmatched_scores.enabled = true;
-          }];
+          quality_profiles = [
+            { trash_id = "500ecc23572575511fd81893777d1e06"; # [French MULTi.VF] HD Bluray + WEB
+              reset_unmatched_scores.enabled = true; }
+            { trash_id = "1addc08c4232bc2617684d517df15f75"; # [French VOSTFR] HD Bluray + WEB
+              reset_unmatched_scores.enabled = true; }
+          ];
         };
       };
     };

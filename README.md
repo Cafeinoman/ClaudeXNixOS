@@ -540,9 +540,10 @@ Classées par utilité pour toi :
 1. **Fichier Proton VPN dans sops-nix** — sops-nix est en place pour les sauvegardes ;
    le fichier WireGuard de Proton pourrait y passer aussi, pour ne plus le redéposer à
    la main après une réinstallation.
-2. (Fait : Recyclarr, `seedbox.recyclarr = true`, profils TRaSH « WEB-1080p » et
-   « HD Bluray + WEB ». Variante française MULTi/VF possible plus tard : profils TRaSH
-   « french », à choisir par leur `trash_id`.)
+2. (Fait : Recyclarr, `seedbox.recyclarr = true`, profils TRaSH français en 1080p :
+   « [French MULTi.VF] » (audio français, le choix par défaut) et « [French VOSTFR] » (audio
+   d'origine, sous-titres français). Ils ne servent que si tes indexeurs proposent des
+   versions françaises.)
 3. **Prétranscodage nocturne** (Tdarr ou Unmanic, en conteneur) — convertit la nuit
    les fichiers problématiques (HEVC, sous-titres PGS) en formats lisibles partout.
    Coûteux en CPU et en temps, mais le Xeon peut tourner la nuit. Utile seulement si
