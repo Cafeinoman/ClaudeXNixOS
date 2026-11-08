@@ -11,6 +11,7 @@
     ./streaming.nix   # chaque service s'active dans settings.streaming
     ./proton-vpn.nix  # inactif tant que seedbox.vpn = false
     ./backup.nix      # inactif tant que backup.enable = false
+    ./locanalyse.nix  # inactif tant que locanalyse.enable = false
   ];
 
   # Démarrage hybride : fonctionne que le Kimsufi soit en BIOS legacy ou en UEFI.

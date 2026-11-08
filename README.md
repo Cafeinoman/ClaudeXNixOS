@@ -20,6 +20,7 @@ modules/media.nix             ← groupe "media" et arborescence /srv/data
 modules/seedbox.nix           ← Servarr : qBittorrent, Prowlarr, Sonarr, Radarr (+ options)
 modules/streaming.nix         ← Jellyfin, Seerr, Navidrome, Audiobookshelf, accès public
 modules/proton-vpn.nix        ← qBittorrent confiné derrière Proton VPN + redirection de port
+modules/locanalyse.nix        ← serveur de veille Locanalyse en conteneur isolé (archive du serveur chargée par son empreinte)
 scripts/install-from-rescue.sh  ← installation : bash scripts/install-from-rescue.sh <machine>
 scripts/migrate-app-state.sh  ← déménage l'état des *arr d'une machine à l'autre
 scripts/ks-stock-check.sh     ← vérifie le stock du KS-5 (France, Londres, Francfort)

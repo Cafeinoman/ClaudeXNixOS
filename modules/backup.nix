@@ -26,11 +26,16 @@ let
   appServices = [
     "sonarr" "radarr" "prowlarr" "qbittorrent" "bazarr" "lidarr"
     "jellyfin" "seerr" "navidrome" "audiobookshelf"
+    "container@locanalyse" # le conteneur entier : base SQLite de Locanalyse et base d'utilisateurs de ntfy
   ];
   appDirs = [
     "/var/lib/sonarr" "/var/lib/radarr" "/var/lib/private/prowlarr" "/var/lib/qBittorrent"
     "/var/lib/bazarr" "/var/lib/lidarr" "/var/lib/jellyfin" "/var/lib/private/seerr"
     "/var/lib/navidrome" "/var/lib/audiobookshelf" "/var/lib/secrets"
+    # Locanalyse : clé de signature et secrets des jumelages (les perdre = rejumeler tous les membres),
+    # base, paquets du flux ; utilisateurs et jetons ntfy. Le cache des API est exclu par « **/cache ».
+    "/var/lib/nixos-containers/locanalyse/var/lib/locanalyse"
+    "/var/lib/nixos-containers/locanalyse/var/lib/private/ntfy-sh"
   ];
   excludes = [
     # Caches et fichiers régénérables

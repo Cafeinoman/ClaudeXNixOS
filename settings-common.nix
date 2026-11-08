@@ -36,6 +36,17 @@
     ageRecipient = "age1gqlz67qlc86qw3e50dvkk97th34phaw53txecv6sc9ugt049mexqllmckt"; # ta clé age publique (la privée : keys.txt, gestionnaire de mots de passe)
   };
 
+  # Serveur de veille Locanalyse, dans un conteneur isolé (modules/locanalyse.nix). Seul service exposé à Internet.
+  locanalyse = {
+    enable = false;
+    publicHost = null;    # nom (recommandé) ou IP : inscrit dans les codes de jumelage, le changer = tout rejumeler
+    ntfyHost = null;      # null : ntfy sur le port 8443 de publicHost
+    acmeEmail = null;
+    # Archive dist/Locanalyse-Serveur déposée sur le serveur (hors Git : le code n'est pas public), sous ce nom fixe.
+    archive = "/var/lib/locanalyse-src/locanalyse-serveur.tar.gz";
+    narHash = null;       # « Empreinte Nix » du LISEZ-MOI de l'archive : fixe la version déployée
+  };
+
   streaming = {
     jellyfin = false;
     seerr = false;
