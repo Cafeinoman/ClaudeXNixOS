@@ -33,6 +33,16 @@ common // {
     protonCopy = false;
   };
 
+  # Serveur de veille Locanalyse (conteneur isolé, seul service exposé à Internet : 80, 443, 8443).
+  # Adresse = IP de l'atom : elle est inscrite dans les codes de jumelage, qui seront à refaire au passage
+  # sur NixKS. Archive à déposer AVANT le rebuild : /var/lib/locanalyse-src/locanalyse-serveur.tar.gz.
+  locanalyse = common.locanalyse // {
+    enable = true;
+    publicHost = "37.187.126.47";   # ntfy : même adresse, port 8443
+    narHash = "sha256-fWFM9+1UBx7H1X601mv1efek2KjPva7R4qw4jPRDX78="; # dist 2.0.0-dev+08cd29d
+    memoryMax = "1G";               # 4 Go partagés avec la seedbox et Jellyfin
+  };
+
   streaming = common.streaming // {
     jellyfin = true;
     seerr = true;

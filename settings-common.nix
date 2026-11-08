@@ -45,6 +45,7 @@
     # Archive dist/Locanalyse-Serveur déposée sur le serveur (hors Git : le code n'est pas public), sous ce nom fixe.
     archive = "/var/lib/locanalyse-src/locanalyse-serveur.tar.gz";
     narHash = null;       # « Empreinte Nix » du LISEZ-MOI de l'archive : fixe la version déployée
+    memoryMax = "3G";     # plafond mémoire du conteneur entier
   };
 
   streaming = {

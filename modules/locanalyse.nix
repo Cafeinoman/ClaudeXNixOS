@@ -31,6 +31,7 @@ in
 
     services.locanalyse-container = {
       enable = true;
+      inherit (s) memoryMax;
       veille = {
         inherit (s) publicHost acmeEmail;
         ntfy.host = s.ntfyHost;
