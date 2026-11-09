@@ -53,7 +53,12 @@ let
 
         # qBittorrent répond sans mot de passe sur localhost si l'option
         # « Contourner l'authentification pour localhost » est cochée.
-        if qbt_port="$(curl -fsS --max-time 5 "$QBT/api/v2/app/preferences" | jq -er .listen_port)"; then
+        # Pendant une sauvegarde, qBittorrent est volontairement arrêté.
+        # On conserve le renouvellement NAT-PMP, mais on évite
+        # de tester l'API et de générer une fausse alerte.
+        if [[ -f /run/backup-stopped-services ]]; then
+          :
+        elif qbt_port="$(curl -fsS --max-time 5 "$QBT/api/v2/app/preferences" | jq -er .listen_port)"; then
           warned=""
           if [[ "$qbt_port" != "$port" ]]; then
             curl -fsS --max-time 5 "$QBT/api/v2/app/setPreferences" \
@@ -61,8 +66,7 @@ let
               && echo "qBittorrent écoute maintenant sur le port $port"
           fi
         elif [[ -z "$warned" ]]; then
-          echo "qBittorrent injoignable sur localhost : démarrage en cours, ou option" \
-               "« Contourner l'authentification pour localhost » non cochée" >&2
+          echo "API qBittorrent temporairement inaccessible (hors période de sauvegarde)" >&2
           warned=1
         fi
 
