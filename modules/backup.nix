@@ -57,6 +57,18 @@ let
   '';
 
   appStop = pkgs.writeShellScript "backup-apps-stop" ''
+    # Ne pas arrêter les applications si le prune B2 est en cours
+    # ou en train de démarrer/s'arrêter.
+    prune_state="$(${pkgs.systemd}/bin/systemctl show \
+      --property=ActiveState --value restic-backups-b2-prune.service)"
+
+    case "$prune_state" in
+      active|activating|deactivating|reloading)
+        echo "Prune Restic B2 en cours : arrêt des applications refusé." >&2
+        exit 1
+        ;;
+    esac
+
     : > /run/backup-stopped-services
     for s in ${lib.concatStringsSep " " appServices}; do
       if ${pkgs.systemd}/bin/systemctl is-active --quiet "$s.service"; then
@@ -277,7 +289,7 @@ lib.mkIf cfg.enable (lib.mkMerge [
         "--exclude-larger-than=200M" # garde-fou : rien de volumineux ne part vers B2
         "--pack-size=32"             # moins d'objets → moins de transactions B2
       ];
-      pruneOpts = [ "--keep-daily 7" "--keep-weekly 4" "--keep-monthly 3" "--max-unused 10%" ];
+      pruneOpts = [];
       backupPrepareCommand = "${appStop}";
       backupCleanupCommand = "${appStart}";
       timerConfig = {
@@ -285,6 +297,54 @@ lib.mkIf cfg.enable (lib.mkMerge [
         RandomizedDelaySec = "30m";
         Persistent = true;
       };
+    };
+    # ---------- B2 : nettoyage indépendant ----------
+    services.restic.backups.b2-prune = {
+      repository = "b2:${cfg.b2Bucket}:${host}";
+      passwordFile = config.sops.secrets.restic_password.path;
+      environmentFile = config.sops.templates."restic-b2.env".path;
+
+      initialize = false;
+
+      # Aucun fichier à sauvegarder : uniquement forget --prune.
+      paths = [];
+      pruneOpts = [
+        "--keep-daily 7"
+        "--keep-weekly 4"
+        "--keep-monthly 3"
+        "--max-unused 10%"
+      ];
+
+      timerConfig = {
+        OnCalendar = "05:00";
+        Persistent = true;
+      };
+    };
+
+    # Le prune attend la fin complète de la sauvegarde,
+    # y compris son ExecStopPost (redémarrage des applications).
+    systemd.services.restic-backups-b2-prune = {
+      preStart = ''
+        set -euo pipefail
+
+        while true; do
+          backup_state="$(${pkgs.systemd}/bin/systemctl show \
+            --property=ActiveState --value restic-backups-b2.service)"
+
+          case "$backup_state" in
+            active|activating|deactivating|reloading)
+              ${pkgs.coreutils}/bin/sleep 10
+              ;;
+            *)
+              break
+              ;;
+          esac
+        done
+      '';
+
+      onFailure = [
+        "backup-alert@restic-backups-b2-prune.service"
+      ];
     };
     systemd.services.restic-backups-b2 = {
       onFailure = [ "backup-alert@restic-backups-b2.service" ];
