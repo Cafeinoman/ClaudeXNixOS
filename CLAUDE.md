@@ -39,15 +39,15 @@ qui sert à :
 - streaming (Jellyfin, Seerr, Navidrome, Audiobookshelf), sur la machine Xeon suivante ;
 - serveur de veille **Locanalyse** (conteneur isolé, seul service exposé à Internet).
 
-Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent. **KS-5 obtenu (signalé le
-11/11/2026)** ; datacenter, IP et noms de disques pas encore relevés dans le dépôt.
+Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent. **KS-5 obtenu et installé le
+11/11/2026** : `ns3109411.ip-54-36-110.eu`, IP `54.36.110.44`, datacenter **Limburg** (`lim1`, Allemagne).
 
 ## Deux machines, un dépôt
 
 | Machine | Matériel | Rôle |
 |---|---|---|
 | `atom` (déjà louée) | KS-3 ancien : Atom N2800, 4 Go, 1 × 2 To, pas de VT-x, ni AVX ni SSE4.2 | rodage, seedbox + VPN, sauvegarde B2 ; Jellyfin et SMB en lecture directe (Jellyfin instable : SQLite en SIGILL) ; **pas de Claude Code** |
-| `NixKS` (louée, pas encore installée au 11/11/2026) | KS-5 : Xeon E3-1270 v6 (4 c / 8 f, AVX2, **sans iGPU**), 32 Go, 2 × 2 To en RAID 1 mdadm | serveur principal : dev + seedbox + streaming |
+| `NixKS` (installée le 11/11/2026, services pas encore activés) | KS-5 : Xeon E3-1270 v6 (4 c / 8 f, AVX2, **sans iGPU**), 32 Go, 2 × 2 To HGST HUS724020ALA640 en RAID 1 mdadm, démarrage **UEFI** | serveur principal : dev + seedbox + streaming |
 
 - Nom Tailscale / DNS de `NixKS` : `nixks` (les noms d'hôte sont insensibles à la casse).
 - Machine suivante : **KS-5 (`24sk50-v1`, Xeon E3-1270 v6, 4 cœurs / 8 fils, sans iGPU donc
@@ -106,7 +106,10 @@ Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent. **KS-5 obt
 - [Certain] **`atom` installé et démarré le 24/10/2026** (NixOS 26.05, nixpkgs `da6dc0e`,
   `flake.lock` et fichiers générés commités). Démarrage en 30 s, SSH par clé OK (clé `~/.ssh/nix`
   du poste), aucun service en échec.
-- [Certain] **Jamais testé en réel** : `NixKS`, copie Proton Drive.
+- [Certain] **`NixKS` installé et démarré le 11/11/2026** (UEFI, trois RAID 1 `boot`/`swap`/`root` en
+  `[UU]`, aucun service en échec, SSH vérifié par empreinte). Disques SMART sains mais **très vieux** :
+  82 720 h (`sda`) et 99 988 h (`sdb`) au 11/11/2026. Les alertes RAID et SMART ne vont que dans le journal.
+- [Certain] **Jamais testé en réel** : copie Proton Drive.
 - Le CLI Proton Drive (`proton-drive`, ~v0.8) est un binaire précompilé (build `x64-baseline`),
   lancé via `nix-ld`. Ses options peuvent changer. [Probable] Le build « baseline » de Bun exige
   SSE4.2/POPCNT, que l'Atom n'a pas : `sauvegarde-proton` risque de planter sur l'Atom, à tester.
@@ -150,15 +153,16 @@ Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent. **KS-5 obt
 2. Tester une **restauration** B2 une fois (README, « Restaurer »), avant d'en avoir besoin.
 3. Première semaine : surveiller la console B2 (« Caps & Alerts ») et la taille du dépôt.
 4. Vérifier le **lien physique** au prochain import Radarr (même inode dans `torrents/` et `media/`).
-5. **`NixKS` : installation puis déménagement**, en suivant le README (« Phase 1 » puis
-   « Déménagement Atom → NixKS »). Points clés : `lsblk` dans le rescue pour `disks` ; tout reste
-   désactivé dans `hosts/NixKS/settings.nix` à l'installation ; le script crée la clé d'hôte SSH,
-   affiche son empreinte et sa clé age, et l'inscrit dans `.sops.yaml` (à rapatrier dans Git) ;
-   puis `secrets/NixKS.yaml`, VPN, Locanalyse, import de l'état, arrêt d'`atom`. Décider avant d'activer Locanalyse : **nom de domaine** plutôt qu'IP.
+5. **`NixKS` : déménagement** (installation faite le 11/11/2026, fichiers générés et clé age commités),
+   en suivant le README « Déménagement Atom → NixKS » à partir de l'étape 1 (Tailscale) :
+   `secrets/NixKS.yaml`, VPN, Locanalyse, import de l'état, arrêt d'`atom`. Décider avant d'activer Locanalyse : **nom de domaine** plutôt qu'IP.
    Après la bascule : couper la sauvegarde B2 d'`atom` et supprimer son dépôt `b2:NixOS-save:atom`
    (deux dépôts dans les 10 Go gratuits).
-6. Décembre 2026 : passer à NixOS 26.11 (26.05 supporté jusqu'au 31/12/2026).
-7. Suggestions du README : `proton.conf` dans sops-nix, plugins Jellyfin.
+6. `NixKS` : envoyer les alertes RAID (`mdadm-alert`) et SMART (`smartd`) sur ntfy, une fois
+   `secrets/NixKS.yaml` en place (disques de 9 et 11 ans). Envisager une sortie console série
+   (`console=ttyS…`) pour diagnostiquer par SoL.
+7. Décembre 2026 : passer à NixOS 26.11 (26.05 supporté jusqu'au 31/12/2026).
+8. Suggestions du README : `proton.conf` dans sops-nix, plugins Jellyfin.
 
 ## Le rescue OVH de l'Atom (leçons de l'installation)
 
@@ -175,6 +179,23 @@ Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent. **KS-5 obt
   `ssh-keygen -R <ip>`.
 - Le Nix du rescue est mono-utilisateur dans `/home/setupuser/.nix-profile/bin` ; pour un
   `nix-collect-garbage`, le lancer en root avec ce PATH.
+
+## Le rescue et le démarrage du KS-5 (leçons de l'installation du 11/11/2026)
+
+- Rescue OVH : mdadm 4.2 et `HOMEHOST <ignore>` → udev ne crée pas `/dev/md/<nom>` pour les RAID
+  `any:<nom>` de disko. Le script pose une règle udev provisoire. Les RAID s'assemblent en `md125-127`
+  dans un ordre qui **change à chaque démarrage** : désigner un RAID par son contenu (`blkid -t TYPE=…`).
+- Restes d'une tentative précédente retrouvés DANS un RAID neuf → le script fait `wipefs -a` sur chaque
+  RAID avant formatage. Pas de table GPT à l'intérieur d'un RAID (le noyau du rescue ne la relisait pas) :
+  trois miroirs `boot` (metadata 1.0), `swap`, `root`.
+- Démarrage UEFI chez OVH : iPXE (réseau) charge le fichier `efiBootloaderPath` du serveur, réglé par
+  l'API (`PUT /dedicated/server/{serviceName}`) à `\efi\boot\bootx64.efi` ; sinon repli sur rEFInd. Une
+  installation manuelle ne le règle pas.
+- [Certain] Le drapeau `pmbr_boot` sur le MBR protecteur empêchait iPXE et rEFInd de voir l'ESP : retiré
+  à la main, et le script ne le pose plus qu'en BIOS legacy. L'étiquette FAT `EFI_SYSPART` (celle des
+  installations OVH) a été posée à la main avant ; rien ne prouve qu'elle soit nécessaire.
+- Console : SoL (série) et KVM (graphique) disponibles dans le manager. GRUB et le noyau n'écrivent que
+  sur l'écran graphique : SoL reste muet après iPXE.
 
 ## Pièges à ne pas répéter
 

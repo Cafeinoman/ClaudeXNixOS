@@ -209,11 +209,41 @@ fi
 if command -v mdadm >/dev/null; then
   mdadm --stop --scan 2>/dev/null || true
 fi
+# disko crée les RAID avec --homehost=any (noms « any:boot », « any:swap », « any:root ») puis
+# attend que udev crée /dev/md/<nom>. Le rescue OVH (mdadm 4.2, « HOMEHOST <ignore> »
+# dans mdadm.conf) ne crée pas ces liens : « timeout waiting for /dev/md/boot » (KS-5,
+# 11/11/2026). Règle provisoire, en RAM, perdue au redémarrage. Noms : modules/disko.nix.
+if (( ${#DISKS[@]} >= 2 )); then
+  cat > /etc/udev/rules.d/65-md-disko-names.rules <<'RULES'
+SUBSYSTEM=="block", KERNEL=="md*", ENV{MD_NAME}=="any:boot", SYMLINK+="md/boot"
+SUBSYSTEM=="block", KERNEL=="md*", ENV{MD_NAME}=="any:swap", SYMLINK+="md/swap"
+SUBSYSTEM=="block", KERNEL=="md*", ENV{MD_NAME}=="any:root", SYMLINK+="md/root"
+RULES
+  udevadm control --reload || warn "udevadm control --reload a échoué."
+fi
 if [[ -n "${TEMP_SWAP:-}" ]]; then
   swapoff "$TEMP_SWAP" || die "impossible de retirer le swap provisoire : redémarre le rescue. Le disque est intact."
 fi
+DISKO_RUN="${DISKO_BIN[0]}"
+# Après chaque `mdadm --create`, disko fait `sgdisk --zap-all /dev/md/<nom>` (« mdadm devices
+# spawn with an existing partition table ») : des restes d'une installation précédente se
+# retrouvent DANS le nouveau RAID. Sur le KS-5 (11/11/2026), un en-tête GPT de secours
+# périmé y a fait échouer sgdisk (« Couldn't seek to partition table »), donc disko, sous
+# `set -e`. Copie corrigée du script : wipefs efface toute signature du RAID (GPT, btrfs,
+# swap, ext4 d'OVH…), puis sgdisk sans être fatal. Sans ce nettoyage, disko pourrait aussi
+# sauter mkfs en voyant une vieille signature (il ne formate que les volumes « vides »).
+if (( ${#DISKS[@]} >= 2 )); then
+  DISKO_RUN=/root/disko-destroy-format-mount
+  sed 's|^\([[:space:]]*\)sgdisk --zap-all "\(/dev/md/[^"]*\)"$|\1wipefs -a "\2" \|\| true; sgdisk --zap-all "\2" \|\| true|' \
+    "${DISKO_BIN[0]}" > "$DISKO_RUN"
+  chmod 0755 "$DISKO_RUN"
+  n_create="$(grep -c 'mdadm --create' "$DISKO_RUN")"
+  n_wipe="$(grep -c 'wipefs -a "/dev/md/' "$DISKO_RUN")"
+  (( n_create > 0 && n_wipe == n_create )) \
+    || die "correction du script disko impossible ($n_wipe nettoyages pour $n_create RAID). Rien n'a été effacé."
+fi
 # EFFACER a déjà été confirmé plus haut.
-"${DISKO_BIN[0]}" --yes-wipe-all-disks || die "disko a échoué (le disque est peut-être à moitié effacé)."
+"$DISKO_RUN" --yes-wipe-all-disks || die "disko a échoué (le disque est peut-être à moitié effacé)."
 mountpoint -q /mnt || die "disko n'a pas monté /mnt."
 mountpoint -q /mnt/nix || die "disko n'a pas monté /mnt/nix."
 # Le swap soulage la RAM pour la suite de l'installation (s'il n'est pas déjà actif).
@@ -221,10 +251,14 @@ while read -r sw; do
   swapon "$sw" 2>/dev/null || true
 done < <(blkid -t TYPE=swap -o device)
 # Certains BIOS anciens refusent de démarrer un disque GPT en mode legacy si le MBR
-# protecteur n'a pas le drapeau "boot". Sans effet ailleurs.
-for d in "${DISKS[@]}"; do
-  parted -s "$d" disk_set pmbr_boot on || warn "impossible de poser pmbr_boot sur $d"
-done
+# protecteur n'a pas le drapeau "boot". En UEFI, ce drapeau est contraire à la norme et
+# certains firmwares ignorent alors la GPT, donc l'ESP : seulement en BIOS legacy.
+# (KS-5, UEFI, 11/11/2026 : rEFInd d'OVH ne trouvait aucun chargeur avec pmbr_boot.)
+if [[ ! -d /sys/firmware/efi ]]; then
+  for d in "${DISKS[@]}"; do
+    parted -s "$d" disk_set pmbr_boot on || warn "impossible de poser pmbr_boot sur $d"
+  done
+fi
 if (( ${#DISKS[@]} >= 2 )); then
   echo "État du RAID (la synchronisation initiale continue en arrière-plan, plusieurs heures) :"
   cat /proc/mdstat
