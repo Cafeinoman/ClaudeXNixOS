@@ -1,8 +1,9 @@
 # Partitionnement déclaratif, adapté au nombre de disques de settings.nix :
 #  - 1 disque  : GPT [BIOS | ESP | swap | btrfs]
-#  - 2 disques : GPT [BIOS | ESP | RAID] sur chaque disque, puis miroirs mdadm :
-#                /boot en RAID 1 (metadata 1.0, lisible par le firmware UEFI),
-#                swap + btrfs dans un second RAID 1.
+#  - 2 disques : GPT [BIOS | ESP | swap | root] sur chaque disque, puis trois miroirs
+#                mdadm, un par partition : /boot (metadata 1.0, lisible par le firmware
+#                UEFI), swap, btrfs. Pas de table de partitions DANS un RAID : dans le
+#                rescue du KS-5, le noyau refusait de la relire (partprobe « in use »).
 #    Avantage du mdadm sur un serveur sans console : si un disque meurt, le serveur
 #    redémarre seul sur le disque restant (mode dégradé), sans intervention.
 # GRUB est installé sur chaque disque (partition EF02) : démarrage BIOS ou UEFI.
@@ -73,9 +74,13 @@ let
           type = "EF00";
           content = { type = "mdraid"; name = "boot"; };
         };
-        raid = {
+        swap = {
+          size = settings.swapSize;
+          content = { type = "mdraid"; name = "swap"; };
+        };
+        root = {
           size = "100%";
-          content = { type = "mdraid"; name = "system"; };
+          content = { type = "mdraid"; name = "root"; };
         };
       };
     };
@@ -90,16 +95,15 @@ let
         metadata = "1.0"; # métadonnées en fin de partition : le firmware voit une FAT normale
         content = esp;
       };
-      system = {
+      swap = {
         type = "mdadm";
         level = 1;
-        content = {
-          type = "gpt";
-          partitions = {
-            swap = { size = settings.swapSize; content.type = "swap"; };
-            root = { size = "100%"; content = btrfsRoot; };
-          };
-        };
+        content.type = "swap";
+      };
+      root = {
+        type = "mdadm";
+        level = 1;
+        content = btrfsRoot;
       };
     };
   };

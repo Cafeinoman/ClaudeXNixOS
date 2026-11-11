@@ -209,14 +209,15 @@ fi
 if command -v mdadm >/dev/null; then
   mdadm --stop --scan 2>/dev/null || true
 fi
-# disko crée les RAID avec --homehost=any (noms « any:boot », « any:system ») puis attend que
-# udev crée /dev/md/boot et /dev/md/system. Le rescue OVH (mdadm 4.2, « HOMEHOST <ignore> »
+# disko crée les RAID avec --homehost=any (noms « any:boot », « any:swap », « any:root ») puis
+# attend que udev crée /dev/md/<nom>. Le rescue OVH (mdadm 4.2, « HOMEHOST <ignore> »
 # dans mdadm.conf) ne crée pas ces liens : « timeout waiting for /dev/md/boot » (KS-5,
 # 11/11/2026). Règle provisoire, en RAM, perdue au redémarrage. Noms : modules/disko.nix.
 if (( ${#DISKS[@]} >= 2 )); then
   cat > /etc/udev/rules.d/65-md-disko-names.rules <<'RULES'
 SUBSYSTEM=="block", KERNEL=="md*", ENV{MD_NAME}=="any:boot", SYMLINK+="md/boot"
-SUBSYSTEM=="block", KERNEL=="md*", ENV{MD_NAME}=="any:system", SYMLINK+="md/system"
+SUBSYSTEM=="block", KERNEL=="md*", ENV{MD_NAME}=="any:swap", SYMLINK+="md/swap"
+SUBSYSTEM=="block", KERNEL=="md*", ENV{MD_NAME}=="any:root", SYMLINK+="md/root"
 RULES
   udevadm control --reload || warn "udevadm control --reload a échoué."
 fi
