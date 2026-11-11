@@ -137,6 +137,16 @@ say "3/7 Installation de Nix dans le rescue (en RAM, disparaît au redémarrage)
 if ! command -v git >/dev/null || ! command -v curl >/dev/null || ! command -v xz >/dev/null; then
   apt-get update -qq && apt-get install -y -qq git curl xz-utils
 fi
+# RAID : le mdadm de disko attend que udev crée /dev/md/<nom>. Ce lien vient des règles udev
+# du paquet Debian mdadm (63-md-raid-arrays.rules) : sans elles (rescue du KS-5, 11/11/2026),
+# « timeout waiting for /dev/md/boot » et disko échoue après avoir partitionné.
+if (( ${#DISKS[@]} >= 2 )) && [[ ! -e /lib/udev/rules.d/63-md-raid-arrays.rules \
+   && ! -e /usr/lib/udev/rules.d/63-md-raid-arrays.rules ]]; then
+  say "Installation de mdadm dans le rescue (règles udev des RAID)"
+  DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends mdadm \
+    || die "apt-get install mdadm a échoué. Le disque est intact."
+  udevadm control --reload 2>/dev/null || true
+fi
 
 # Le rescue vit en RAM : sur une machine à 4 Go, l'évaluation de NixOS est juste.
 # On ajoute 2 Go de swap compressé en mémoire si le noyau du rescue le permet.
