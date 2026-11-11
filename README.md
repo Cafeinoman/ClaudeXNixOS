@@ -91,6 +91,12 @@ disque. Le mode rescue reste donc la voie à suivre pour avoir le RAID 1.
    de la machine (`age1…`, pour sops-nix). Le script crée la clé d'hôte pendant
    l'installation plutôt qu'au premier démarrage justement pour les connaître d'avance.
 6. Manager → **Netboot → Disque dur**, puis redémarrer.
+   **En UEFI** (le script affiche le mode détecté ; c'est le cas du KS-5), OVH démarre par le
+   réseau puis charge le fichier enregistré dans `efiBootloaderPath`, qu'une installation
+   manuelle ne règle pas. Avant ce redémarrage : https://eu.api.ovh.com/console →
+   `PUT /dedicated/server/{serviceName}` avec `{ "efiBootloaderPath": "\\efi\\boot\\bootx64.efi" }`,
+   puis vérifier avec `GET`. La console **SoL** du manager montre iPXE, mais pas GRUB ni le
+   noyau (écran graphique : console **KVM**).
 7. Depuis le téléphone : `ssh TON_USER@IP_DU_SERVEUR`.
 8. **Avec RAID 1** : la synchronisation initiale des deux disques dure plusieurs
    heures (`cat /proc/mdstat`). Le serveur est utilisable pendant ce temps, juste

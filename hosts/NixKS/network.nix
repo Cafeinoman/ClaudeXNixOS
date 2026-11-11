@@ -1,17 +1,15 @@
-# EXEMPLE — ce fichier est réécrit par scripts/install-from-rescue.sh
-# avec les vraies valeurs lues dans le mode rescue (IP, passerelle, adresse MAC).
-# Config statique : on ne dépend pas du DHCP d'OVH.
+# Généré par scripts/install-from-rescue.sh le 2026-11-11 à partir du mode rescue.
 { ... }:
 {
   networking.useDHCP = false;
   networking.useNetworkd = true;
 
   systemd.network.networks."10-wan" = {
-    # On identifie la carte par son adresse MAC : insensible au nommage eth0/enp*.
-    matchConfig.MACAddress = "00:00:00:00:00:00";
-    address = [ "192.0.2.10/24" ];
+    matchConfig.MACAddress = "a4:bf:01:24:f9:dd";
+    address = [ "54.36.110.44/24" "2001:41d0:700:132c::1/128" ];
     routes = [
-      { Gateway = "192.0.2.254"; GatewayOnLink = true; }
+      { Gateway = "54.36.110.254"; GatewayOnLink = true; }
+      { Gateway = "2001:41d0:700:13ff:ff:ff:ff:ff"; GatewayOnLink = true; }
     ];
     linkConfig.RequiredForOnline = "routable";
   };
