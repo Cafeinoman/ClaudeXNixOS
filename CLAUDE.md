@@ -36,27 +36,26 @@ qui sert à :
 - travailler à distance avec Claude Code **depuis le téléphone** (SSH/mosh via Tailscale) ;
 - tester des side projects (Docker rootless, direnv) ;
 - seedbox **Servarr** derrière **Proton VPN** ;
-- streaming (Jellyfin, Seerr, Navidrome, Audiobookshelf), sur la machine Xeon suivante.
+- streaming (Jellyfin, Seerr, Navidrome, Audiobookshelf), sur la machine Xeon suivante ;
+- serveur de veille **Locanalyse** (conteneur isolé, seul service exposé à Internet).
 
-Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent. Machine visée depuis le
-25/10/2026 : **KS-5**, dans un datacenter en **France, à Londres ou à Francfort** (Sydney,
-Singapour, Canada, Varsovie exclus).
+Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent. **KS-5 obtenu (signalé le
+11/11/2026)** ; datacenter, IP et noms de disques pas encore relevés dans le dépôt.
 
 ## Deux machines, un dépôt
 
 | Machine | Matériel | Rôle |
 |---|---|---|
 | `atom` (déjà louée) | KS-3 ancien : Atom N2800, 4 Go, 1 × 2 To, pas de VT-x, ni AVX ni SSE4.2 | rodage, seedbox + VPN, sauvegarde B2 ; Jellyfin et SMB en lecture directe (Jellyfin instable : SQLite en SIGILL) ; **pas de Claude Code** |
-| `NixKS` (pas encore commandée) | KS-5 : Xeon E3-1270 v6 (4 c / 8 f, AVX2, **sans iGPU**), 32 Go, 2 × 2 To en RAID 1 mdadm | serveur principal : dev + seedbox + streaming |
+| `NixKS` (louée, pas encore installée au 11/11/2026) | KS-5 : Xeon E3-1270 v6 (4 c / 8 f, AVX2, **sans iGPU**), 32 Go, 2 × 2 To en RAID 1 mdadm | serveur principal : dev + seedbox + streaming |
 
 - Nom Tailscale / DNS de `NixKS` : `nixks` (les noms d'hôte sont insensibles à la casse).
 - Machine suivante : **KS-5 (`24sk50-v1`, Xeon E3-1270 v6, 4 cœurs / 8 fils, sans iGPU donc
   transcodage logiciel seulement)**, 2 × 2 To HDD, 32 Go, 17,99 € HT = 21,59 € TTC (catalogue du
   25/10/2026). Datacenters : gra, rbx, sbg, lon, fra. Config : `hosts/NixKS/`.
   KS-5-A (`26sk50a-v1`, Xeon E-2274G avec iGPU) : 26,99 € HT = 32,39 € TTC, hors budget.
-- Une tâche planifiée d'alerte de stock (id `trig_01V4YpaVQet8pWAiu7zGQefZ`) surveille l'API OVH ;
-  son prompt est modifié à la main par l'utilisateur. **À supprimer après la commande.**
-  Le script équivalent : `scripts/ks-stock-check.sh` (KS-5, code retour 0 = disponible).
+- Tâche planifiée d'alerte de stock (id `trig_01V4YpaVQet8pWAiu7zGQefZ`) : **désactivée** (constaté le
+  11/11/2026), pas encore supprimée. `scripts/ks-stock-check.sh` ne sert plus.
 
 ## Décisions d'architecture (et pourquoi)
 
@@ -86,10 +85,23 @@ Singapour, Canada, Varsovie exclus).
     `secrets/<machine>.yaml` : `restic_password`, `b2_account_id`, `b2_account_key`, `ntfy_topic`.
     Détails : `secrets/README.md`.
   - Alertes : ntfy (échec B2, surveillance quotidienne 12:00, rappel Proton).
+  - **Prune B2 séparé** (`restic-backups-b2-prune`, 05:00) : la sauvegarde de 04:00 ne fait plus
+    `forget --prune` ; le prune attend la fin de la sauvegarde, et la sauvegarde refuse d'arrêter les
+    applications si un prune tourne (correctif de l'utilisateur, 10/11/2026).
+- **Recyclarr** (`seedbox.recyclarr`) : profils TRaSH **français** 1080p (MULTi.VF, VOSTFR), plafonds de
+  taille (séries 19 Mo/min, films 21 Mo/min), 05:30. Clés API `sonarr_api_key` / `radarr_api_key` dans sops.
+- **Locanalyse** (`modules/locanalyse.nix`) : conteneur NixOS à utilisateurs privés, chargé depuis une
+  archive **hors de Git** (`/var/lib/locanalyse-src/locanalyse-serveur.tar.gz`) épinglée par `narHash`.
+  Ports 80/443 (+ 8443 pour ntfy). `publicHost` est inscrit dans les codes de jumelage : changer d'adresse
+  = rejumeler tous les membres. [Certain] Conséquence : **`atom` ne s'évalue plus hors du serveur**
+  (l'archive manque) ; `NixKS` s'évalue tant que `locanalyse.enable = false`.
 
 ## Ce qui est testé / non testé
 
-- [Certain] Les deux machines s'évaluent sans avertissement, options activées et désactivées ;
+- [Certain] `NixKS` s'évalue sans avertissement (11/11/2026, `flake.lock` de `da6dc0e`) : RAID 1
+  (`/dev/md/boot`, `md-name-any:system`), GRUB sur `/dev/sda` et `/dev/sdb`, `boot.swraid` actif.
+  `atom` ne s'évalue que sur le serveur (archive Locanalyse).
+- [Certain] Jusqu'au 25/10/2026, les deux machines s'évaluaient sans avertissement, options activées et désactivées ;
   `shellcheck` propre sur tous les scripts et scripts générés ; allers-retours restic et age testés
   en local.
 - [Certain] **`atom` installé et démarré le 24/10/2026** (NixOS 26.05, nixpkgs `da6dc0e`,
@@ -125,25 +137,30 @@ Singapour, Canada, Varsovie exclus).
   et 4K H.264. `tailscaled` ~22 % d'un fil en 1080p, ~52 % en 4K (~8,5 Mbit/s) : pas de 4K à fort
   débit possible. [Certain] Jellyfin plante parfois en SIGILL (`status=4/ILL`) dans SQLite (CPU
   sans SSE4.2/POPCNT) ; systemd le relance. Rien à corriger sur l'Atom : réglé par le serveur suivant.
+- Après le 25/10/2026 (commits de l'utilisateur, sans Claude) : Seerr et Recyclarr sur `atom`
+  (26-28/10), Locanalyse activé sur `atom` le 08/11 (adresse IP `37.187.126.47`, provisoire),
+  prune B2 séparé et port-forward Proton silencieux pendant les sauvegardes (09-10/11).
 - Phase 7 : faite le 25/10/2026 sur `atom`. restic → B2 (`b2:NixOS-save:atom`) chaque nuit à 04:00,
   première sauvegarde manuelle réussie, alerte ntfy testée. Secrets dans `secrets/atom.yaml`
   (vérifié chiffré). Pas de copie Proton sur l'Atom (CLI Bun incompatible avec le CPU).
 
 ## Reste à faire
 
-1. Phase 3 : retirer le port 22 (`modules/base.nix`), **pas avant le 01/11/2026**,
-   `rebuild-test` d'abord, vérification depuis le téléphone via Tailscale, puis `rebuild`.
+1. Phase 3 : retirer le port 22 (`modules/base.nix`) — toujours ouvert au 11/11/2026. À faire
+   plutôt sur `NixKS`, après le déménagement (`rebuild-test`, vérification via Tailscale, `rebuild`).
 2. Tester une **restauration** B2 une fois (README, « Restaurer »), avant d'en avoir besoin.
 3. Première semaine : surveiller la console B2 (« Caps & Alerts ») et la taille du dépôt.
 4. Vérifier le **lien physique** au prochain import Radarr (même inode dans `torrents/` et `media/`).
-5. Machine suivante, `NixKS` (KS-5 `24sk50-v1`) : à la commande, supprimer la routine
-   d'alerte de stock ; confirmer `disks` avec `lsblk` dans le rescue ; installation avec
-   `install-from-rescue.sh` (32 Go : `TEMP_SWAP` inutile) ; clé age de la nouvelle machine dans
-   `.sops.yaml` + `sops updatekeys`. **Avant le déménagement** : `migrate-app-state.sh export` et une
-   sauvegarde B2 récente (`sauvegarde-proton` est impossible sur l'Atom) ; redéposer
-   `/var/lib/secrets/proton.conf` sur la nouvelle machine.
+5. **`NixKS` : installation puis déménagement**, en suivant le README (« Phase 1 » puis
+   « Déménagement Atom → NixKS »). Points clés : `lsblk` dans le rescue pour `disks` ; tout reste
+   désactivé dans `hosts/NixKS/settings.nix` à l'installation ; le script crée la clé d'hôte SSH,
+   affiche son empreinte et sa clé age, et l'inscrit dans `.sops.yaml` (à rapatrier dans Git) ;
+   puis `secrets/NixKS.yaml`, VPN, Locanalyse, import de l'état, arrêt d'`atom`. Supprimer la tâche
+   planifiée de stock. Décider avant d'activer Locanalyse : **nom de domaine** plutôt qu'IP.
+   Après la bascule : couper la sauvegarde B2 d'`atom` et supprimer son dépôt `b2:NixOS-save:atom`
+   (deux dépôts dans les 10 Go gratuits).
 6. Décembre 2026 : passer à NixOS 26.11 (26.05 supporté jusqu'au 31/12/2026).
-7. Suggestions du README : `proton.conf` dans sops-nix, Recyclarr, plugins Jellyfin.
+7. Suggestions du README : `proton.conf` dans sops-nix, plugins Jellyfin.
 
 ## Le rescue OVH de l'Atom (leçons de l'installation)
 

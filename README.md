@@ -83,8 +83,13 @@ disque. Le mode rescue reste donc la voie à suivre pour avoir le RAID 1.
    Le script vérifie tout et évalue la configuration **avant** d'effacer le disque.
    Il demande de taper `EFFACER`, puis le mot de passe de ton utilisateur (pour sudo).
 5. **Récupère les fichiers générés** (`network.nix`, `hardware-configuration.nix`,
-   `flake.lock`) : `git commit` + `git push` depuis le rescue, ou copie-les plus tard
-   depuis `~/nixos-config` sur le serveur installé.
+   `flake.lock`, et `.sops.yaml` si le script y a inscrit la clé de la machine) :
+   `git commit` + `git push` depuis le rescue, ou copie-les plus tard depuis
+   `~/nixos-config` sur le serveur installé.
+   **Note les deux valeurs affichées à la fin** : l'empreinte de la clé d'hôte SSH
+   (`SHA256:…`, à comparer à celle que SSH montre à la première connexion) et la clé age
+   de la machine (`age1…`, pour sops-nix). Le script crée la clé d'hôte pendant
+   l'installation plutôt qu'au premier démarrage justement pour les connaître d'avance.
 6. Manager → **Netboot → Disque dur**, puis redémarrer.
 7. Depuis le téléphone : `ssh TON_USER@IP_DU_SERVEUR`.
 8. **Avec RAID 1** : la synchronisation initiale des deux disques dure plusieurs
@@ -245,17 +250,7 @@ Pourquoi les bases ne vont pas dans Git : ce sont des fichiers binaires qui chan
 diff lisible), qu'il faut arrêter le service pour copier proprement, et qui
 contiennent des secrets en clair (clés API, cookies d'indexeurs).
 
-**Déménagement Atom → NixKS** :
-1. Sur `NixKS`, active les mêmes services que sur `atom` dans `hosts/NixKS/settings.nix`,
-   puis `rebuild`.
-2. Sur `atom` : `sudo bash scripts/migrate-app-state.sh export`
-3. `scp ~/app-state-*.tar.gz nixks:` (via Tailscale)
-4. Sur `NixKS` : `sudo bash scripts/migrate-app-state.sh import ~/app-state-atom-….tar.gz`
-5. Données, si utile : `rsync -aP atom:/srv/data/ /srv/data/` (depuis `NixKS`).
-6. Supprime l'archive des deux côtés (`shred -u`).
-
-Les chemins sont identiques sur les deux machines (`/srv/data/...`, adresse de
-qBittorrent) : rien à reconfigurer après l'import.
+**Déménagement Atom → NixKS** : voir la section du même nom, après la phase 7.
 
 ## Phase 5 — Entretien
 
@@ -467,6 +462,76 @@ age -d -i ~/.config/sops/age/keys.txt atom-AAAAMMJJ.tar.gz.age | tar -tzf - | he
 restic, ta clé age (`keys.txt`), l'identifiant B2. Sans eux, les sauvegardes sont
 illisibles, y compris pour toi.
 
+## Déménagement Atom → NixKS
+
+Principe : `NixKS` s'installe **avec tout désactivé** (chaque option dépend d'un fichier
+absent d'une machine neuve), puis reçoit les services dans l'ordre où leurs fichiers
+arrivent. `atom` continue de tourner jusqu'à la bascule, puis s'arrête.
+
+**Avant de commencer**
+- Sur `atom` : une sauvegarde B2 de moins de 24 h (`systemctl status restic-backups-b2`).
+- Décide de l'**adresse publique de Locanalyse** sur `NixKS`. Elle est inscrite dans les
+  codes de jumelage : passer de l'IP d'`atom` à celle de `NixKS` oblige de toute façon à
+  rejumeler tous les membres. Un **nom de domaine** (enregistrement A vers l'IP de
+  `NixKS`) rend ce rejumelage le dernier : au prochain changement de serveur, seul le DNS
+  bouge.
+
+**1. Installation** — phases 1 et 2 sur `NixKS` (`lsblk` dans le rescue : deux disques de
+2 To, normalement `/dev/sda` et `/dev/sdb` ; pas besoin de `TEMP_SWAP` avec 32 Go).
+Rapatrie dans Git les fichiers générés et `.sops.yaml`. `sudo tailscale up` : la machine
+apparaît sous `nixks`.
+
+**2. Secrets** — depuis le poste : `sops secrets/NixKS.yaml` (voir `secrets/README.md`).
+Mêmes valeurs que `secrets/atom.yaml` pour `b2_account_id`, `b2_account_key`, `ntfy_topic` ;
+un `restic_password` neuf ou le même, au choix (le dépôt `b2:NixOS-save:NixKS` est neuf).
+`sonarr_api_key` / `radarr_api_key` : **les mêmes que sur `atom`**, car les clés API
+voyagent avec l'état des applications importé à l'étape 5.
+
+**3. Fichiers hors de Git**, déposés à la main sur `NixKS` (tu les copies toi-même, ils
+ne passent pas par Claude) :
+- `/var/lib/secrets/proton.conf` (root, `chmod 600`) : le même que sur `atom`, ou un
+  nouveau fichier WireGuard généré chez Proton (préférable : une clé par machine) ;
+- `/var/lib/locanalyse-src/locanalyse-serveur.tar.gz` : la même archive que sur `atom`
+  (même `narHash`).
+
+**4. Activation** — dans `hosts/NixKS/settings.nix`, recopie les réglages d'`atom` :
+`seedbox` (`enable`, `vpn`, `recyclarr`), `streaming`, `backup.enable` (et
+`protonCopy = true` : le Xeon fait tourner le CLI Proton), `locanalyse` avec la
+nouvelle `publicHost` et `memoryMax` à `"3G"` (valeur commune). `rebuild-check`, puis
+`rebuild`. Les services démarrent à vide.
+
+**5. Données, puis état des applications**
+1. Première copie des données, `atom` toujours en service (longue) — depuis `NixKS`,
+   en tant que ton utilisateur :
+   `rsync -aHP --info=progress2 atom:/srv/data/ /srv/data/`
+   **`-H` est indispensable** : sans lui, chaque fichier présent à la fois dans
+   `torrents/` et `media/` (lien physique) est copié deux fois et occupe deux fois la place.
+2. Sur `atom` : `sudo bash scripts/migrate-app-state.sh export`, puis arrête ses
+   applications pour qu'il ne télécharge plus rien :
+   `sudo systemctl stop sonarr radarr prowlarr qbittorrent seerr jellyfin recyclarr.timer container@locanalyse`
+3. Seconde passe `rsync -aHP` (rapide : seulement ce qui a changé).
+4. `scp ~/app-state-*.tar.gz nixks:` puis, sur `NixKS` :
+   `sudo bash scripts/migrate-app-state.sh import ~/app-state-atom-….tar.gz`
+   L'archive contient aussi l'état de Locanalyse (clé de signature, base, comptes ntfy).
+5. `shred -u` l'archive des deux côtés.
+
+Les chemins sont identiques (`/srv/data/...`, qBittorrent sur `192.168.15.1:8090`) : rien à
+reconfigurer dans Sonarr/Radarr/Seerr. Dans Jellyfin, lance une analyse de bibliothèque.
+
+**6. Vérifications sur `NixKS`** — chaque interface web via `http://nixks:<port>` ;
+`systemctl --failed` vide ; IP de qBittorrent = IP Proton ; port NAT-PMP attribué
+(`journalctl -u proton-port-forward`) ; `sudo systemctl start restic-backups-b2` puis
+alerte ntfy de test ; Locanalyse joignable sur la nouvelle adresse, puis **rejumelage des
+membres** ; `cat /proc/mdstat` = `[UU]` une fois la synchronisation terminée.
+
+**7. Fin d'`atom`** — après quelques jours sans souci :
+- `backup.enable = false` sur `atom` et supprime le dépôt `atom` du bucket B2 : deux
+  dépôts se partagent les 10 Go gratuits, et le plafond à 0 $ ferait **refuser** les
+  sauvegardes de `NixKS` une fois la limite atteinte ;
+- `atom` reste facturé tant qu'il n'est pas résilié : avec le KS-5 (21,59 € TTC), les
+  deux ensemble dépassent probablement le budget de 30 €/mois ;
+- retire `atom` de `.sops.yaml` et de Tailscale.
+
 ## Dépannage : le serveur ne répond plus
 
 Kimsufi n'offre pas d'écran distant : impossible de choisir une génération dans le
@@ -560,8 +625,10 @@ sur le Xeon si un indexeur l'exige), **Readarr** (plus maintenu), le transcodage
 
 La configuration a été évaluée avec succès (NixOS 26.05 ; profil par défaut, profil
 `atom` avec tout activé, profil Xeon RAID 1 (alors nommé `ks3`) avec tout activé et Jellyfin public ; aucun
-avertissement), le script d'installation et le service de redirection de port
-passent `shellcheck`. Un
+avertissement ; `NixKS` réévalué le 11/11/2026 dans sa configuration d'installation), le
+script d'installation et le service de redirection de port passent `shellcheck`.
+`atom` installé et en service depuis le 24/10/2026 (disque unique). Le chemin **RAID 1**
+du script (deux disques, `/boot` en miroir) n'a jamais tourné sur une vraie machine. Un
 `nix build --dry-run` confirme que tous les logiciels viennent du cache binaire
 (seuls les fichiers de configuration sont construits sur place). Elle n'a **pas** été
 démarrée sur un vrai Kimsufi : le premier démarrage reste le moment de vérité.
