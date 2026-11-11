@@ -54,8 +54,7 @@ Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent. **KS-5 obt
   transcodage logiciel seulement)**, 2 × 2 To HDD, 32 Go, 17,99 € HT = 21,59 € TTC (catalogue du
   25/10/2026). Datacenters : gra, rbx, sbg, lon, fra. Config : `hosts/NixKS/`.
   KS-5-A (`26sk50a-v1`, Xeon E-2274G avec iGPU) : 26,99 € HT = 32,39 € TTC, hors budget.
-- Tâche planifiée d'alerte de stock (id `trig_01V4YpaVQet8pWAiu7zGQefZ`) : **désactivée** (constaté le
-  11/11/2026), pas encore supprimée. `scripts/ks-stock-check.sh` ne sert plus.
+- Tâche planifiée d'alerte de stock : **supprimée le 11/11/2026**. `scripts/ks-stock-check.sh` ne sert plus.
 
 ## Décisions d'architecture (et pourquoi)
 
@@ -155,8 +154,7 @@ Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent. **KS-5 obt
    « Déménagement Atom → NixKS »). Points clés : `lsblk` dans le rescue pour `disks` ; tout reste
    désactivé dans `hosts/NixKS/settings.nix` à l'installation ; le script crée la clé d'hôte SSH,
    affiche son empreinte et sa clé age, et l'inscrit dans `.sops.yaml` (à rapatrier dans Git) ;
-   puis `secrets/NixKS.yaml`, VPN, Locanalyse, import de l'état, arrêt d'`atom`. Supprimer la tâche
-   planifiée de stock. Décider avant d'activer Locanalyse : **nom de domaine** plutôt qu'IP.
+   puis `secrets/NixKS.yaml`, VPN, Locanalyse, import de l'état, arrêt d'`atom`. Décider avant d'activer Locanalyse : **nom de domaine** plutôt qu'IP.
    Après la bascule : couper la sauvegarde B2 d'`atom` et supprimer son dépôt `b2:NixOS-save:atom`
    (deux dépôts dans les 10 Go gratuits).
 6. Décembre 2026 : passer à NixOS 26.11 (26.05 supporté jusqu'au 31/12/2026).
