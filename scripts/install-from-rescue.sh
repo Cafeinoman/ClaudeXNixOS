@@ -251,10 +251,14 @@ while read -r sw; do
   swapon "$sw" 2>/dev/null || true
 done < <(blkid -t TYPE=swap -o device)
 # Certains BIOS anciens refusent de démarrer un disque GPT en mode legacy si le MBR
-# protecteur n'a pas le drapeau "boot". Sans effet ailleurs.
-for d in "${DISKS[@]}"; do
-  parted -s "$d" disk_set pmbr_boot on || warn "impossible de poser pmbr_boot sur $d"
-done
+# protecteur n'a pas le drapeau "boot". En UEFI, ce drapeau est contraire à la norme et
+# certains firmwares ignorent alors la GPT, donc l'ESP : seulement en BIOS legacy.
+# (KS-5, UEFI, 11/11/2026 : rEFInd d'OVH ne trouvait aucun chargeur avec pmbr_boot.)
+if [[ ! -d /sys/firmware/efi ]]; then
+  for d in "${DISKS[@]}"; do
+    parted -s "$d" disk_set pmbr_boot on || warn "impossible de poser pmbr_boot sur $d"
+  done
+fi
 if (( ${#DISKS[@]} >= 2 )); then
   echo "État du RAID (la synchronisation initiale continue en arrière-plan, plusieurs heures) :"
   cat /proc/mdstat
