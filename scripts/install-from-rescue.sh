@@ -137,16 +137,6 @@ say "3/7 Installation de Nix dans le rescue (en RAM, disparaît au redémarrage)
 if ! command -v git >/dev/null || ! command -v curl >/dev/null || ! command -v xz >/dev/null; then
   apt-get update -qq && apt-get install -y -qq git curl xz-utils
 fi
-# RAID : le mdadm de disko attend que udev crée /dev/md/<nom>. Ce lien vient des règles udev
-# du paquet Debian mdadm (63-md-raid-arrays.rules) : sans elles (rescue du KS-5, 11/11/2026),
-# « timeout waiting for /dev/md/boot » et disko échoue après avoir partitionné.
-if (( ${#DISKS[@]} >= 2 )) && [[ ! -e /lib/udev/rules.d/63-md-raid-arrays.rules \
-   && ! -e /usr/lib/udev/rules.d/63-md-raid-arrays.rules ]]; then
-  say "Installation de mdadm dans le rescue (règles udev des RAID)"
-  DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends mdadm \
-    || die "apt-get install mdadm a échoué. Le disque est intact."
-  udevadm control --reload 2>/dev/null || true
-fi
 
 # Le rescue vit en RAM : sur une machine à 4 Go, l'évaluation de NixOS est juste.
 # On ajoute 2 Go de swap compressé en mémoire si le noyau du rescue le permet.
@@ -218,6 +208,17 @@ fi
 # Le rescue OVH assemble parfois l'ancien RAID logiciel : on l'arrête avant d'effacer.
 if command -v mdadm >/dev/null; then
   mdadm --stop --scan 2>/dev/null || true
+fi
+# disko crée les RAID avec --homehost=any (noms « any:boot », « any:system ») puis attend que
+# udev crée /dev/md/boot et /dev/md/system. Le rescue OVH (mdadm 4.2, « HOMEHOST <ignore> »
+# dans mdadm.conf) ne crée pas ces liens : « timeout waiting for /dev/md/boot » (KS-5,
+# 11/11/2026). Règle provisoire, en RAM, perdue au redémarrage. Noms : modules/disko.nix.
+if (( ${#DISKS[@]} >= 2 )); then
+  cat > /etc/udev/rules.d/65-md-disko-names.rules <<'RULES'
+SUBSYSTEM=="block", KERNEL=="md*", ENV{MD_NAME}=="any:boot", SYMLINK+="md/boot"
+SUBSYSTEM=="block", KERNEL=="md*", ENV{MD_NAME}=="any:system", SYMLINK+="md/system"
+RULES
+  udevadm control --reload || warn "udevadm control --reload a échoué."
 fi
 if [[ -n "${TEMP_SWAP:-}" ]]; then
   swapoff "$TEMP_SWAP" || die "impossible de retirer le swap provisoire : redémarre le rescue. Le disque est intact."
