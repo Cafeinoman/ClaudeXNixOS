@@ -18,6 +18,9 @@ modifier les secrets si le serveur disparaît.
 
 ## Pour chaque machine, après son installation
 
+`scripts/install-from-rescue.sh` affiche la clé age de la machine à la fin et l'inscrit
+lui-même dans `.sops.yaml` si la ligne `age1CHANGE_ME_cle_<machine>` y est encore. Sinon :
+
 ```bash
 # Sur la machine elle-même :
 nix shell nixpkgs#ssh-to-age -c sh -c 'ssh-to-age < /etc/ssh/ssh_host_ed25519_key.pub'

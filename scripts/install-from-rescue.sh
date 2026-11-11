@@ -55,6 +55,13 @@ lsblk -o NAME,SIZE,TYPE,MODEL,MOUNTPOINT
 echo
 if (( ${#DISKS[@]} >= 2 )); then
   echo "Mode : RAID 1 logiciel (miroir) sur ${DISKS[*]}"
+  # Un miroir a la taille du plus petit disque : deux tailles très différentes trahissent
+  # en général une erreur dans 'disks' (clé USB, disque virtuel du rescue…).
+  sizes=()
+  for d in "${DISKS[@]}"; do sizes+=("$(blockdev --getsize64 "$d")"); done
+  min="$(printf '%s\n' "${sizes[@]}" | sort -n | head -n1)"
+  max="$(printf '%s\n' "${sizes[@]}" | sort -n | tail -n1)"
+  (( max - min <= max / 100 )) || die "les disques du RAID n'ont pas la même taille (${sizes[*]} octets) : vérifie 'disks'."
 else
   echo "Mode : disque unique ${DISKS[0]}"
 fi
@@ -184,6 +191,13 @@ if ! GENCONF_OUT="$(nix build --no-link --print-out-paths "$CFG.config.system.bu
   || ! ENTER_OUT="$(nix build --no-link --print-out-paths "$CFG.pkgs.nixos-enter")"; then
   undo_temp_swap; die "construction des outils d'installation impossible. Le disque est intact."
 fi
+# Facultatif : convertit la clé d'hôte SSH en clé age (sops-nix), affichée à la fin.
+SSH_TO_AGE=""
+if STA_OUT="$(nix build --no-link --print-out-paths "$CFG.pkgs.ssh-to-age")"; then
+  SSH_TO_AGE="$STA_OUT/bin/ssh-to-age"
+else
+  warn "ssh-to-age indisponible : la clé age de la machine sera à calculer après le premier démarrage."
+fi
 GENERATE_CONFIG="$GENCONF_OUT/bin/nixos-generate-config"
 NIXOS_ENTER_BIN="$ENTER_OUT/bin/nixos-enter"
 mapfile -t DISKO_BIN < <(compgen -G "$DISKO_OUT/bin/*")
@@ -257,7 +271,28 @@ NIXOS_INSTALL_BOOTLOADER=1 "$NIXOS_ENTER_BIN" --root /mnt -- \
   || die "installation du chargeur impossible."
 
 # ---------------------------------------------------------------- 7. Finitions
-say "7/7 Copie de la configuration et mot de passe de $USER_NAME"
+say "7/7 Clé d'hôte SSH, copie de la configuration et mot de passe de $USER_NAME"
+# Clé d'hôte créée MAINTENANT plutôt qu'au premier démarrage (sshd garde une clé existante) :
+#  - son empreinte, affichée plus bas, permet de vérifier la première connexion SSH ;
+#  - sa clé age (sops-nix) est connue tout de suite : .sops.yaml et secrets/<machine>.yaml
+#    peuvent être préparés avant même le premier démarrage.
+HOST_KEY=/mnt/etc/ssh/ssh_host_ed25519_key
+if [[ ! -f "$HOST_KEY" ]]; then
+  install -d -m 0755 /mnt/etc/ssh
+  ssh-keygen -q -t ed25519 -N "" -C "root@$HOST" -f "$HOST_KEY" \
+    || warn "clé d'hôte non créée : sshd la créera au premier démarrage."
+fi
+HOST_FPR=""; AGE_KEY=""
+if [[ -f "$HOST_KEY.pub" ]]; then
+  HOST_FPR="$(ssh-keygen -lf "$HOST_KEY.pub" | awk '{print $2}')"
+  [[ -n "$SSH_TO_AGE" ]] && AGE_KEY="$("$SSH_TO_AGE" < "$HOST_KEY.pub" || true)"
+fi
+SOPS_DONE=0
+if [[ "$AGE_KEY" == age1* ]] && grep -q "age1CHANGE_ME_cle_$HOST\b" "$REPO_DIR/.sops.yaml" 2>/dev/null; then
+  sed -i "s/age1CHANGE_ME_cle_$HOST\b/$AGE_KEY/" "$REPO_DIR/.sops.yaml" && SOPS_DONE=1
+  [[ -d "$REPO_DIR/.git" ]] && git -C "$REPO_DIR" add -A
+fi
+
 DEST="/mnt/home/$USER_NAME/nixos-config"
 mkdir -p "$(dirname "$DEST")"
 rm -rf "$DEST"
@@ -281,8 +316,11 @@ Il reste à faire, dans l'ordre :
   2. Ici : reboot   (redémarrage propre, plutôt que le bouton du manager)
   3. Depuis ton poste : ssh $USER_NAME@${ADDR4%/*}
      (supprime l'ancienne empreinte si SSH râle : ssh-keygen -R ${ADDR4%/*})
+     Empreinte attendue de la clé d'hôte : ${HOST_FPR:-inconnue (créée au premier démarrage)}
   4. Rapatrier les fichiers générés dans le dépôt (flake.lock, hosts/$HOST/network.nix,
-     hosts/$HOST/hardware-configuration.nix) : la copie est dans ~/nixos-config sur le serveur.
+     hosts/$HOST/hardware-configuration.nix$( (( SOPS_DONE )) && echo ", .sops.yaml")) : la copie est dans ~/nixos-config sur le serveur.
+  5. Clé age de la machine (sops-nix) : ${AGE_KEY:-à calculer, voir secrets/README.md}
+     $( (( SOPS_DONE )) && echo "Déjà inscrite dans .sops.yaml." || echo "À mettre dans .sops.yaml, puis : sops updatekeys secrets/$HOST.yaml (si le fichier existe).")
 
 Si le serveur ne répond pas après 5 minutes : repasse en rescue, et lis la section
 "Dépannage" du README.

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Déménage l'état des applications (Sonarr, Radarr, Prowlarr, qBittorrent, Bazarr,
-# Lidarr, Jellyfin, Seerr, Navidrome, Audiobookshelf) d'une machine à l'autre :
-# bases de données, réglages, clés API, comptes, historique.
+# Lidarr, Jellyfin, Seerr, Navidrome, Audiobookshelf, conteneur Locanalyse) d'une machine
+# à l'autre : bases de données, réglages, clés API, comptes, historique.
 #
 # Les deux machines ont la même arborescence (/srv/data/...) et les mêmes services
 # déclarés dans Nix : l'état copié fonctionne tel quel sur la nouvelle machine.
@@ -21,11 +21,19 @@
 # ne la mets ni dans Git ni sur un partage public, et supprime-la après l'import.
 set -euo pipefail
 
-SERVICES=(sonarr radarr prowlarr qbittorrent bazarr lidarr jellyfin seerr navidrome audiobookshelf)
+# Même liste que modules/backup.nix (appServices / appDirs), sans /var/lib/secrets : le
+# fichier WireGuard se redépose à la main (README, phase 4 bis).
+SERVICES=(sonarr radarr prowlarr qbittorrent bazarr lidarr jellyfin seerr navidrome audiobookshelf
+          container@locanalyse)
 DIRS=(
   /var/lib/sonarr /var/lib/radarr /var/lib/private/prowlarr /var/lib/qBittorrent
   /var/lib/bazarr /var/lib/lidarr /var/lib/jellyfin /var/lib/private/seerr
   /var/lib/navidrome /var/lib/audiobookshelf
+  # Locanalyse : clé de signature, secrets des jumelages, base ; utilisateurs ntfy.
+  # Conteneur à utilisateurs privés : ses fichiers appartiennent à des numéros sans nom
+  # sur l'hôte, restaurés tels quels. À vérifier au premier import (journalctl -u container@locanalyse).
+  /var/lib/nixos-containers/locanalyse/var/lib/locanalyse
+  /var/lib/nixos-containers/locanalyse/var/lib/private/ntfy-sh
 )
 
 die() { printf 'ERREUR : %s\n' "$*" >&2; exit 1; }

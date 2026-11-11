@@ -1,5 +1,15 @@
 # Machine "NixKS" : Kimsufi KS-5 (Xeon E3-1270 v6, sans iGPU, 32 Go, 2 x 2 To en RAID 1).
 # Rôle : serveur principal (développement, seedbox, streaming).
+#
+# Tout est DÉSACTIVÉ pour l'installation, volontairement : chaque option ci-dessous dépend
+# d'un fichier qui n'existe pas encore sur une machine neuve. Les activer AVANT d'avoir ces
+# fichiers casse l'évaluation ou le démarrage du service. Ordre (README, « Déménagement ») :
+#   1. installation, Tailscale ;
+#   2. backup.enable, recyclarr : il faut secrets/NixKS.yaml (sops, clé age de la machine,
+#      affichée par le script d'installation) ;
+#   3. seedbox.vpn : il faut /var/lib/secrets/proton.conf ;
+#   4. locanalyse.enable : il faut l'archive dans /var/lib/locanalyse-src/ et une adresse
+#      publique (un nom de domaine évite de rejumeler à chaque changement de serveur).
 let
   common = import ../../settings-common.nix;
 in
