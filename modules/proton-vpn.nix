@@ -66,7 +66,10 @@ let
               && echo "qBittorrent écoute maintenant sur le port $port"
           fi
         elif [[ -z "$warned" ]]; then
-          echo "API qBittorrent temporairement inaccessible (hors période de sauvegarde)" >&2
+          # 403 = option « Contourner l'authentification pour localhost » non cochée (cas d'un
+          # qBittorrent neuf, avant l'import de l'état) ; sinon qBittorrent démarre encore.
+          echo "API qBittorrent inaccessible : démarrage en cours, ou option « Contourner" \
+               "l'authentification pour localhost » non cochée (erreur 403)" >&2
           warned=1
         fi
 
