@@ -97,8 +97,8 @@ Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent. **KS-5 obt
 
 ## Ce qui est testé / non testé
 
-- [Certain] `NixKS` s'évalue sans avertissement (11/11/2026, `flake.lock` de `da6dc0e`) : RAID 1
-  (`/dev/md/boot`, `md-name-any:system`), GRUB sur `/dev/sda` et `/dev/sdb`, `boot.swraid` actif.
+- [Certain] `NixKS` s'évalue sans avertissement (11/11/2026, `flake.lock` de `da6dc0e`) : trois RAID 1
+  (`/dev/md/boot`, `/dev/md/swap`, `/dev/md/root`), GRUB sur `/dev/sda` et `/dev/sdb`, `boot.swraid` actif.
   `atom` ne s'évalue que sur le serveur (archive Locanalyse).
 - [Certain] Jusqu'au 25/10/2026, les deux machines s'évaluaient sans avertissement, options activées et désactivées ;
   `shellcheck` propre sur tous les scripts et scripts générés ; allers-retours restic et age testés
