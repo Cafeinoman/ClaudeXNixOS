@@ -159,7 +159,10 @@ Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent. **KS-5 obt
   - [Certain] **Recyclarr en échec** depuis l'import : « Quality 'Bluray-1080p': min (50.8/50.4) cannot
     be greater than preferred (17/15) » — les plafonds de `tailles` sont sous le minimum TRaSH du
     Bluray-1080p. [Probable] même échec silencieux sur `atom` depuis le 27/10.
-  - Non vérifié (sudo) : IP de qBittorrent = IP Proton.
+  - [Certain] IP de qBittorrent (159.26.118.28) ≠ IP du serveur ; Recyclarr OK après correction du
+    minimum Bluray (14/11, 09:13) ; sauvegarde B2 de l'état importé faite (snapshot `1000b530`).
+  - [Certain] SSH via Tailscale OK depuis le poste (`coffeepot`, 100.88.151.21) ; téléphone pas encore testé.
+    Le `~/.ssh/config` du poste fait pointer `nixks` vers l'IP publique 54.36.110.44.
 
 ## Reste à faire
 
@@ -172,9 +175,9 @@ Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent. **KS-5 obt
    corriger Recyclarr (Bluray-1080p), vérifications de l'étape 6 (IP Proton, test ntfy, interfaces web),
    Locanalyse (**nom de domaine** à choisir, archive à déposer), puis fin d'`atom` (étape 7) : couper
    sa sauvegarde B2 et supprimer `b2:NixOS-save:atom` (deux dépôts dans les 10 Go gratuits).
-6. `NixKS` : alertes RAID/SMART sur ntfy écrites (`modules/alertes-disques.nix`, 14/11/2026), **pas encore
-   appliquées** ; test : `sudo mdadm --monitor --scan --oneshot --test`. Console série : réglage
-   `serialConsole` prêt (null) ; [Probable] `ttyS0` (seul UART détecté), à confirmer par la table SPCR.
+6. `NixKS` : alertes RAID/SMART sur ntfy (`modules/alertes-disques.nix`) appliquées et testées le 14/11/2026
+   (TestMessage reçus) ; test : `sudo mdadm --monitor --scan --oneshot --test`. Console série : `ttyS0,115200n8`
+   sur `NixKS` (SPCR : 0x3F8, 115200), effective au prochain redémarrage, pas encore testée par SoL.
 7. Décembre 2026 : passer à NixOS 26.11 (26.05 supporté jusqu'au 31/12/2026).
 8. Suggestions du README : `proton.conf` dans sops-nix, plugins Jellyfin.
 

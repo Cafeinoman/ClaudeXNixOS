@@ -19,6 +19,10 @@ common // {
 
   lowSpecHardware = false;
 
+  # Port série du SoL : table ACPI SPCR lue le 14/11/2026 → 0x3F8 (ttyS0) à 115200 bauds.
+  # Pris en compte au prochain redémarrage seulement (ligne de commande du noyau).
+  serialConsole = "ttyS0,115200n8";
+
   # Mêmes services qu'atom (déménagement, README) : l'état des applications est importé
   # ensuite avec migrate-app-state.sh. Recyclarr échoue (clés API d'atom) jusqu'à cet import.
   seedbox = common.seedbox // {
