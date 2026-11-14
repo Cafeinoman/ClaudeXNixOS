@@ -32,20 +32,27 @@ in
       KbdInteractiveAuthentication = false;
       PermitRootLogin = "no";
     };
+    # Phase 3 : SSH joignable seulement via Tailscale (tailscale0 est de confiance ci-dessous).
+    # openFirewall vaut true par défaut et ouvrirait le port 22 sur l'IP publique.
+    # Secours si Tailscale tombe : console KVM (ou SoL) du manager OVH, mot de passe du compte.
+    openFirewall = false;
   };
 
   # ---------- Réseau ----------
   networking.firewall = {
     enable = true;
-    allowedTCPPorts = [ 22 ]; # à fermer en phase 3, une fois Tailscale validé
     trustedInterfaces = [ "tailscale0" ];
   };
   services.tailscale = {
     enable = true;
     openFirewall = true;
   };
-  # Shell qui survit aux coupures réseau du téléphone (UDP 60000-61000).
-  programs.mosh.enable = true;
+  # Shell qui survit aux coupures réseau du téléphone (UDP 60000-61000), via Tailscale
+  # seulement : openFirewall (true par défaut) ouvrirait ces ports sur l'IP publique.
+  programs.mosh = {
+    enable = true;
+    openFirewall = false;
+  };
 
   # ---------- Mémoire ----------
   # Swap compressé en RAM, prioritaire sur le swap disque (bien plus lent).
