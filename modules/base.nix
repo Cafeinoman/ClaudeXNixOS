@@ -8,6 +8,11 @@ in
   i18n.defaultLocale = "en_US.UTF-8";
   i18n.extraLocaleSettings.LC_TIME = "fr_FR.UTF-8";
   console.keyMap = "fr";
+  # Messages du noyau aussi sur le port série (SoL) ; tty0 en dernier reste /dev/console,
+  # donc la console KVM garde l'invite de secours. systemd ajoute une invite de connexion
+  # sur le port série.
+  boot.kernelParams = lib.optionals ((settings.serialConsole or null) != null)
+    [ "console=${settings.serialConsole}" "console=tty0" ];
 
   # ---------- Utilisateur ----------
   # Mot de passe défini pendant l'installation (pas stocké dans Git).

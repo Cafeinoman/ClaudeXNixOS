@@ -18,6 +18,10 @@
   swapSize = "8G";
   lowSpecHardware = false;
 
+  # Console série du noyau, lisible par SoL (Serial over LAN) dans le manager OVH, par exemple
+  # "ttyS0,115200n8". null = écran (KVM) seulement. L'écran reste la console principale.
+  serialConsole = null;
+
   seedbox = {
     enable = false;
     bazarr = false;
