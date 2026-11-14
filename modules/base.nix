@@ -8,6 +8,11 @@ in
   i18n.defaultLocale = "en_US.UTF-8";
   i18n.extraLocaleSettings.LC_TIME = "fr_FR.UTF-8";
   console.keyMap = "fr";
+  # Messages du noyau aussi sur le port série (SoL) ; tty0 en dernier reste /dev/console,
+  # donc la console KVM garde l'invite de secours. systemd ajoute une invite de connexion
+  # sur le port série.
+  boot.kernelParams = lib.optionals ((settings.serialConsole or null) != null)
+    [ "console=${settings.serialConsole}" "console=tty0" ];
 
   # ---------- Utilisateur ----------
   # Mot de passe défini pendant l'installation (pas stocké dans Git).
@@ -27,20 +32,27 @@ in
       KbdInteractiveAuthentication = false;
       PermitRootLogin = "no";
     };
+    # Phase 3 : SSH joignable seulement via Tailscale (tailscale0 est de confiance ci-dessous).
+    # openFirewall vaut true par défaut et ouvrirait le port 22 sur l'IP publique.
+    # Secours si Tailscale tombe : console KVM (ou SoL) du manager OVH, mot de passe du compte.
+    openFirewall = false;
   };
 
   # ---------- Réseau ----------
   networking.firewall = {
     enable = true;
-    allowedTCPPorts = [ 22 ]; # à fermer en phase 3, une fois Tailscale validé
     trustedInterfaces = [ "tailscale0" ];
   };
   services.tailscale = {
     enable = true;
     openFirewall = true;
   };
-  # Shell qui survit aux coupures réseau du téléphone (UDP 60000-61000).
-  programs.mosh.enable = true;
+  # Shell qui survit aux coupures réseau du téléphone (UDP 60000-61000), via Tailscale
+  # seulement : openFirewall (true par défaut) ouvrirait ces ports sur l'IP publique.
+  programs.mosh = {
+    enable = true;
+    openFirewall = false;
+  };
 
   # ---------- Mémoire ----------
   # Swap compressé en RAM, prioritaire sur le swap disque (bien plus lent).

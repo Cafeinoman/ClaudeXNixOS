@@ -18,6 +18,10 @@
   swapSize = "8G";
   lowSpecHardware = false;
 
+  # Console série du noyau, lisible par SoL (Serial over LAN) dans le manager OVH, par exemple
+  # "ttyS0,115200n8". null = écran (KVM) seulement. L'écran reste la console principale.
+  serialConsole = null;
+
   seedbox = {
     enable = false;
     bazarr = false;
@@ -34,6 +38,12 @@
     protonReminderDays = 30;         # rappel ntfy si pas de copie Proton depuis N jours (0 = jamais)
     protonFolder = "/my-files/backups"; # dossier Proton Drive (créé à la main une fois)
     ageRecipient = "age1gqlz67qlc86qw3e50dvkk97th34phaw53txecv6sc9ugt049mexqllmckt"; # ta clé age publique (la privée : keys.txt, gestionnaire de mots de passe)
+  };
+
+  # Nom gratuit <nom>.duckdns.org vers l'IP du serveur (modules/duckdns.nix), pour Locanalyse.
+  # Jeton : duckdns_token dans secrets/<machine>.yaml. À régler machine par machine.
+  duckdns = {
+    domain = null; # ex. "mon-locanalyse" (sans .duckdns.org)
   };
 
   # Serveur de veille Locanalyse, dans un conteneur isolé (modules/locanalyse.nix). Seul service exposé à Internet.
