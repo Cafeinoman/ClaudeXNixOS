@@ -161,13 +161,14 @@ Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent. **KS-5 obt
     Bluray-1080p. [Probable] même échec silencieux sur `atom` depuis le 27/10.
   - [Certain] IP de qBittorrent (159.26.118.28) ≠ IP du serveur ; Recyclarr OK après correction du
     minimum Bluray (14/11, 09:13) ; sauvegarde B2 de l'état importé faite (snapshot `1000b530`).
-  - [Certain] SSH via Tailscale OK depuis le poste (`coffeepot`, 100.88.151.21) ; téléphone pas encore testé.
-    Le `~/.ssh/config` du poste fait pointer `nixks` vers l'IP publique 54.36.110.44.
+  - [Certain] SSH et mosh via Tailscale OK depuis le poste (`coffeepot`) et le téléphone (`s24`). Sur le
+    poste, mosh exige la clé `~/.ssh/nix` (`IdentityFile` dans `~/.ssh/config`).
 
 ## Reste à faire
 
-1. Phase 3 : retirer le port 22 (`modules/base.nix`) — toujours ouvert au 11/11/2026. À faire
-   plutôt sur `NixKS`, après le déménagement (`rebuild-test`, vérification via Tailscale, `rebuild`).
+1. Phase 3 **faite sur `NixKS` le 14/11/2026** : SSH et mosh via Tailscale seulement (poste et téléphone
+   testés, port 22 public fermé, seul 41641/udp ouvert), expiration de clé Tailscale désactivée pour
+   `nixks`. Secours : KVM/SoL du manager OVH + mot de passe. `atom` le recevra à son prochain `rebuild`.
 2. Tester une **restauration** B2 une fois (README, « Restaurer »), avant d'en avoir besoin.
 3. Première semaine : surveiller la console B2 (« Caps & Alerts ») et la taille du dépôt.
 4. Vérifier le **lien physique** au prochain import Radarr (même inode dans `torrents/` et `media/`).
