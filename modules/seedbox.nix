@@ -17,11 +17,14 @@ let
   };
 
   # Plafonds de taille en Mo par minute de durée (Sonarr/Radarr rejettent au-delà) :
-  # ~850 Mo pour un épisode de 45 min, ~2,5 Go pour un film de 2 h. Le « minimum » reste
-  # celui de TRaSH. Seules les qualités 1080p autorisées par les profils MULTi.VF/VOSTFR
-  # sont limitées ; « preferred » doit rester entre min et max.
-  tailles = max: preferred: map (name: { inherit name max preferred; })
-    [ "Bluray-1080p" "WEBDL-1080p" "WEBRip-1080p" ];
+  # ~850 Mo pour un épisode de 45 min, ~2,5 Go pour un film de 2 h. Seules les qualités
+  # 1080p autorisées par les profils MULTi.VF/VOSTFR sont limitées ; Recyclarr refuse
+  # min > preferred. Le minimum reste celui de TRaSH, sauf pour le Bluray-1080p : le sien
+  # (≈ 50 Mo/min) dépasse nos plafonds, il est ramené à celui du WEB-DL 1080p (blurayMin :
+  # 15 séries, 12.5 films, valeurs TRaSH du 14/11/2026), sinon aucun Bluray ne passerait.
+  tailles = max: preferred: blurayMin:
+    [ { name = "Bluray-1080p"; min = blurayMin; inherit max preferred; } ]
+    ++ map (name: { inherit name max preferred; }) [ "WEBDL-1080p" "WEBRip-1080p" ];
 in
 lib.mkIf cfg.enable (lib.mkMerge [
   {
@@ -86,7 +89,7 @@ lib.mkIf cfg.enable (lib.mkMerge [
           api_key._secret = config.sops.secrets.sonarr_api_key.path;
           quality_definition = {
             type = "series";
-            qualities = tailles 19 15;
+            qualities = tailles 19 15 15;
           };
           quality_profiles = [
             { trash_id = "58e8dc75731040612dd6f4ac0676bfd7"; # [French MULTi.VF] HD Bluray + WEB (1080p)
@@ -100,7 +103,7 @@ lib.mkIf cfg.enable (lib.mkMerge [
           api_key._secret = config.sops.secrets.radarr_api_key.path;
           quality_definition = {
             type = "movie";
-            qualities = tailles 21 17;
+            qualities = tailles 21 17 12.5;
           };
           quality_profiles = [
             { trash_id = "500ecc23572575511fd81893777d1e06"; # [French MULTi.VF] HD Bluray + WEB
