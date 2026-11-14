@@ -541,6 +541,56 @@ membres** ; `cat /proc/mdstat` = `[UU]` une fois la synchronisation terminée.
   deux ensemble dépassent probablement le budget de 30 €/mois ;
 - retire `atom` de `.sops.yaml` et de Tailscale.
 
+## Locanalyse sur NixKS avec DuckDNS
+
+But : adresse publique `<nom>.duckdns.org` (gratuite) au lieu d'une IP. Elle est inscrite dans les
+codes de jumelage : au prochain changement de serveur, seul le DNS bouge, sans rejumelage.
+`<nom>` ci-dessous = le sous-domaine choisi (lettres, chiffres, tirets).
+
+**1. Créer le nom (navigateur, 5 min)**
+1. https://www.duckdns.org → connexion (compte GitHub, Google…).
+2. Saisis `<nom>` → **add domain**. Dans « current ip », mets `54.36.110.44` → **update ip**.
+3. Le **token** affiché en haut de la page est un secret (il permet de modifier ton nom) : ne le
+   colle ni dans Git en clair ni dans une conversation.
+4. Vérifie depuis le poste : `nslookup <nom>.duckdns.org` → `54.36.110.44`.
+
+**2. Le jeton dans sops (poste)** — `sops secrets/NixKS.yaml`, ajoute la ligne
+`duckdns_token: <token>`, enregistre, commit sur une branche, PR. Tant que cette clé manque,
+activer `duckdns.domain` fait échouer la construction (sops-nix vérifie la clé) : c'est voulu.
+
+**3. L'archive Locanalyse (poste)** — la même que sur `atom` (même `narHash`) :
+```bash
+scp atom:/var/lib/locanalyse-src/locanalyse-serveur.tar.gz /tmp/
+scp /tmp/locanalyse-serveur.tar.gz nixks:
+ssh -t nixks 'sudo install -D -m 644 ~/locanalyse-serveur.tar.gz /var/lib/locanalyse-src/locanalyse-serveur.tar.gz && rm ~/locanalyse-serveur.tar.gz'
+```
+Puis `sha256sum` du fichier sur les deux serveurs : les empreintes doivent être identiques.
+
+**4. L'état de Locanalyse** — il a été importé avec le reste (`migrate-app-state.sh`, le
+14/11/2026 à 07:20). S'il a encore tourné sur `atom` après l'export (07:18), cet état est en retard :
+arrête `container@locanalyse` sur `atom` et refais un export/import AVANT l'étape 6 (l'import
+remplace aussi l'état des *arr de `NixKS` par celui d'`atom`).
+
+**5. Réglages (Claude, PR)** — dans `hosts/NixKS/settings.nix` :
+```nix
+duckdns = { domain = "<nom>"; };
+locanalyse = common.locanalyse // {
+  enable = true;
+  publicHost = "<nom>.duckdns.org";   # ntfy : même nom, port 8443
+  narHash = "<celui d'atom>";
+  memoryMax = "3G";
+};
+```
+
+**6. Bascule** — après le merge, sur `NixKS` : `git switch main && git pull --ff-only`, `rebuild`.
+- Sur `atom` : `sudo systemctl stop container@locanalyse`, puis `locanalyse.enable = false` dans
+  `hosts/atom/settings.nix` (PR) et `rebuild` sur `atom`. Les ports 80/443 d'`atom` se ferment.
+- Vérifications sur `NixKS` :
+  `systemctl status duckdns-update container@locanalyse --no-pager` (le premier doit afficher
+  `<nom>.duckdns.org → 54.36.110.44`) ; depuis le téléphone, `https://<nom>.duckdns.org` sans
+  alerte de certificat (Let's Encrypt, quelques minutes après le premier démarrage).
+- **Rejumelage** de tous les membres avec les nouveaux codes (l'adresse a changé).
+
 ## Dépannage : le serveur ne répond plus
 
 Kimsufi n'offre pas d'écran distant : impossible de choisir une génération dans le
