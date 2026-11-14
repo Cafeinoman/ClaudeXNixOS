@@ -5,8 +5,8 @@
 # neuve ; l'activer AVANT d'avoir ce fichier casse l'évaluation ou le démarrage du service :
 #   - backup, recyclarr : secrets/NixKS.yaml (sops) — DANS GIT avant le rebuild ;
 #   - seedbox.vpn : /var/lib/secrets/proton.conf — sur le serveur avant le rebuild ;
-#   - locanalyse : archive dans /var/lib/locanalyse-src/ et une adresse publique (un nom de
-#     domaine évite de rejumeler à chaque changement de serveur). Pas encore activé.
+#   - locanalyse : archive dans /var/lib/locanalyse-src/ (sinon l'évaluation échoue) ;
+#   - duckdns : duckdns_token dans secrets/NixKS.yaml.
 let
   common = import ../../settings-common.nix;
 in
@@ -38,6 +38,20 @@ common // {
   backup = common.backup // {
     enable = true;
     protonCopy = false;
+  };
+
+  # Adresse publique de Locanalyse : nom gratuit mis à jour chaque jour (modules/duckdns.nix,
+  # jeton duckdns_token dans secrets/NixKS.yaml).
+  duckdns = { domain = "locanalyse"; };
+
+  # Seul service exposé à Internet (80/443/8443). publicHost est inscrit dans les codes de
+  # jumelage : le nom DuckDNS survit aux changements de serveur (seul le DNS bouge).
+  # narHash = celui d'atom (dist 2.0.0-dev+08cd29d), vérifié sur l'archive le 14/11/2026.
+  locanalyse = common.locanalyse // {
+    enable = true;
+    publicHost = "locanalyse.duckdns.org";
+    narHash = "sha256-fWFM9+1UBx7H1X601mv1efek2KjPva7R4qw4jPRDX78=";
+    memoryMax = "3G";
   };
 
   streaming = common.streaming // {
