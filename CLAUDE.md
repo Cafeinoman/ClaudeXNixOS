@@ -172,9 +172,9 @@ Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent. **KS-5 obt
    corriger Recyclarr (Bluray-1080p), vérifications de l'étape 6 (IP Proton, test ntfy, interfaces web),
    Locanalyse (**nom de domaine** à choisir, archive à déposer), puis fin d'`atom` (étape 7) : couper
    sa sauvegarde B2 et supprimer `b2:NixOS-save:atom` (deux dépôts dans les 10 Go gratuits).
-6. `NixKS` : envoyer les alertes RAID (`mdadm-alert`) et SMART (`smartd`) sur ntfy, une fois
-   `secrets/NixKS.yaml` en place (disques de 9 et 11 ans). Envisager une sortie console série
-   (`console=ttyS…`) pour diagnostiquer par SoL.
+6. `NixKS` : alertes RAID/SMART sur ntfy écrites (`modules/alertes-disques.nix`, 14/11/2026), **pas encore
+   appliquées** ; test : `sudo mdadm --monitor --scan --oneshot --test`. Console série : réglage
+   `serialConsole` prêt (null) ; [Probable] `ttyS0` (seul UART détecté), à confirmer par la table SPCR.
 7. Décembre 2026 : passer à NixOS 26.11 (26.05 supporté jusqu'au 31/12/2026).
 8. Suggestions du README : `proton.conf` dans sops-nix, plugins Jellyfin.
 
