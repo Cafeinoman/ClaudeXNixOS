@@ -117,12 +117,15 @@ disque. Le mode rescue reste donc la voie à suivre pour avoir le RAID 1.
 4. **Premier test du cycle de modification** : ajoute un paquet dans
    `modules/base.nix`, puis `rebuild-check`, `rebuild`, `git commit`.
 
-## Phase 3 — Durcissement (optionnel, après 1 semaine sans souci)
+## Phase 3 — Durcissement (fait sur `NixKS` le 14/11/2026)
 
-- Retire `22` de `allowedTCPPorts` dans `modules/base.nix` : SSH ne sera plus joignable
-  que via Tailscale. **Contrepartie** : si Tailscale tombe, seul le mode rescue te
-  permet de revenir. Applique avec `rebuild-test` d'abord, vérifie depuis le téléphone
-  via Tailscale, puis `rebuild`.
+- SSH (22/tcp) et mosh (60000-61000/udp) ne sont joignables que via Tailscale : dans
+  `modules/base.nix`, `services.openssh.openFirewall = false` et `programs.mosh.openFirewall = false`
+  (les deux valent `true` par défaut ; retirer 22 de `allowedTCPPorts` ne suffit pas).
+- Dans la console Tailscale, désactive l'expiration de clé de la machine (Machines → ⋯ →
+  Disable key expiry) : sinon l'accès SSH tombe au bout de 180 jours.
+- **Secours** si Tailscale tombe : console KVM (ou SoL, `ttyS0`) du manager OVH et le mot de
+  passe du compte, sinon le mode rescue.
 
 ## Phase 4 — Seedbox Servarr (quand le socle est stable)
 

@@ -232,6 +232,10 @@ Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent. **KS-5 obt
 - Ne jamais lancer `disko` ni `install-from-rescue.sh` ailleurs que dans le rescue du bon serveur
   (efface les disques).
 - Pas d'écriture publique (push, dépôt public, message) sans demande explicite.
+- **Jamais de commit ni de push sur `main`** (règle de l'utilisateur, 14/11/2026). Le travail se fait sur une
+  branche `claude/<sujet>` ; quand l'utilisateur demande une PR, pousser CETTE branche et ouvrir une PR vers
+  `main`. L'utilisateur relit et merge lui-même. Après le merge : `git switch main && git pull --ff-only`.
+  `rebuild-test` / `rebuild` depuis une branche non mergée est possible pour tester, en le disant.
 - Un changement = un commit avec le POURQUOI dans le message. Une ligne dans `CHANGELOG.md`
   par changement système.
 
@@ -254,7 +258,8 @@ Ce dépôt (`~/nixos-config`) EST la configuration du serveur. Tout ce qui n'y e
 - Avant de proposer un changement : `rebuild-check` (construit sans appliquer et
   montre le diff des paquets). Corriger les erreurs d'évaluation avant d'aller plus loin.
 - Tu n'as pas sudo sans mot de passe. Pour appliquer (`rebuild`), demande à l'humain.
-- Un changement = un commit Git avec un message qui dit POURQUOI.
+- Un changement = un commit Git avec un message qui dit POURQUOI, sur une branche `claude/<sujet>`,
+  jamais sur `main` : l'humain merge par PR après relecture (voir « Règles absolues »).
 - Ne jamais modifier `system.stateVersion`.
 - Ne jamais toucher à `modules/disko.nix` ni aux `disks` de `hosts/*/settings.nix`
   (relancer disko efface les disques).
