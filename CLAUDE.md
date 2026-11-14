@@ -145,6 +145,21 @@ Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent. **KS-5 obt
 - Phase 7 : faite le 25/10/2026 sur `atom`. restic → B2 (`b2:NixOS-save:atom`) chaque nuit à 04:00,
   première sauvegarde manuelle réussie, alerte ntfy testée. Secrets dans `secrets/atom.yaml`
   (vérifié chiffré). Pas de copie Proton sur l'Atom (CLI Bun incompatible avec le CPU).
+- Déménagement vers `NixKS` (constaté le 14/11/2026, diagnostic en lecture seule) :
+  - [Certain] `secrets/NixKS.yaml` en place ; `hosts/NixKS/settings.nix` active seedbox + VPN, Recyclarr,
+    B2, Jellyfin, Seerr, SMB (Locanalyse et `protonCopy` désactivés). Appliqué : la configuration
+    en service ne diffère du dépôt que par le commit `a3d5584` (message d'erreur de `proton-port-forward`).
+  - [Certain] `nixks` dans Tailscale ; RAID `[UU]` ×3 ; `/srv` 397 Go utilisés sur 1,9 To.
+  - [Certain] `proton.conf` présent (service `proton` actif, port NAT-PMP attribué à 07:21).
+  - [Certain] Données copiées (`/srv/data` 423 Go, 51 fichiers de `media/` en liens physiques) et
+    état d'atom importé le 14/11 à 07:20 (`migrate-app-state.sh import`, archive `…-20261114-0718`).
+    Après l'import, le 403 de `proton-port-forward` a cessé. [Suppose] archives pas encore `shred`.
+  - [Certain] Sauvegarde B2 de `NixKS` OK le 14/11 à 04:01, mais AVANT l'import : l'état importé
+    part dans B2 la nuit suivante.
+  - [Certain] **Recyclarr en échec** depuis l'import : « Quality 'Bluray-1080p': min (50.8/50.4) cannot
+    be greater than preferred (17/15) » — les plafonds de `tailles` sont sous le minimum TRaSH du
+    Bluray-1080p. [Probable] même échec silencieux sur `atom` depuis le 27/10.
+  - Non vérifié (sudo) : IP de qBittorrent = IP Proton.
 
 ## Reste à faire
 
@@ -153,11 +168,10 @@ Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent. **KS-5 obt
 2. Tester une **restauration** B2 une fois (README, « Restaurer »), avant d'en avoir besoin.
 3. Première semaine : surveiller la console B2 (« Caps & Alerts ») et la taille du dépôt.
 4. Vérifier le **lien physique** au prochain import Radarr (même inode dans `torrents/` et `media/`).
-5. **`NixKS` : déménagement** (installation faite le 11/11/2026, fichiers générés et clé age commités),
-   en suivant le README « Déménagement Atom → NixKS » à partir de l'étape 1 (Tailscale) :
-   `secrets/NixKS.yaml`, VPN, Locanalyse, import de l'état, arrêt d'`atom`. Décider avant d'activer Locanalyse : **nom de domaine** plutôt qu'IP.
-   Après la bascule : couper la sauvegarde B2 d'`atom` et supprimer son dépôt `b2:NixOS-save:atom`
-   (deux dépôts dans les 10 Go gratuits).
+5. **`NixKS` : fin du déménagement** (étapes 1 à 5 faites au 14/11/2026) : `rebuild` pour `a3d5584`,
+   corriger Recyclarr (Bluray-1080p), vérifications de l'étape 6 (IP Proton, test ntfy, interfaces web),
+   Locanalyse (**nom de domaine** à choisir, archive à déposer), puis fin d'`atom` (étape 7) : couper
+   sa sauvegarde B2 et supprimer `b2:NixOS-save:atom` (deux dépôts dans les 10 Go gratuits).
 6. `NixKS` : envoyer les alertes RAID (`mdadm-alert`) et SMART (`smartd`) sur ntfy, une fois
    `secrets/NixKS.yaml` en place (disques de 9 et 11 ans). Envisager une sortie console série
    (`console=ttyS…`) pour diagnostiquer par SoL.
