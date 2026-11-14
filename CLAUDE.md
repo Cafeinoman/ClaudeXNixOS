@@ -93,7 +93,10 @@ Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent. **KS-5 obt
   archive **hors de Git** (`/var/lib/locanalyse-src/locanalyse-serveur.tar.gz`) épinglée par `narHash`.
   Ports 80/443 (+ 8443 pour ntfy). `publicHost` est inscrit dans les codes de jumelage : changer d'adresse
   = rejumeler tous les membres. [Certain] Conséquence : **`atom` ne s'évalue plus hors du serveur**
-  (l'archive manque) ; `NixKS` s'évalue tant que `locanalyse.enable = false`.
+  (l'archive manque), et `NixKS` non plus depuis le 14/11/2026 (Locanalyse activé).
+- **DuckDNS** (`modules/duckdns.nix`) : `locanalyse.duckdns.org` → IPv4 seulement, mise à jour quotidienne
+  (jeton `duckdns_token` dans sops). **Pas d'AAAA** : le conteneur ne reçoit 80/443 que par une redirection
+  IPv4 (`forwardPorts`) ; une AAAA ferait échouer Let's Encrypt et les clients IPv6.
 
 ## Ce qui est testé / non testé
 
@@ -163,6 +166,10 @@ Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent. **KS-5 obt
     minimum Bluray (14/11, 09:13) ; sauvegarde B2 de l'état importé faite (snapshot `1000b530`).
   - [Certain] SSH et mosh via Tailscale OK depuis le poste (`coffeepot`) et le téléphone (`s24`). Sur le
     poste, mosh exige la clé `~/.ssh/nix` (`IdentityFile` dans `~/.ssh/config`).
+  - [Certain] **Locanalyse sur `NixKS`** depuis le 14/11/2026, 14:53 (PR #7) : `container@locanalyse` actif,
+    `locanalyse.duckdns.org` → 54.36.110.44 (sans AAAA), certificat Let's Encrypt valide jusqu'au 12/02/2027,
+    API (`/v1/…`) et ntfy (`:8443/v1/health`) répondent. Testé depuis le serveur lui-même seulement.
+    Conteneur d'atom arrêté avant la bascule (état importé à 07:20 à jour). Membres à rejumeler.
 
 ## Reste à faire
 
@@ -174,7 +181,8 @@ Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent. **KS-5 obt
 4. Vérifier le **lien physique** au prochain import Radarr (même inode dans `torrents/` et `media/`).
 5. **`NixKS` : fin du déménagement** (étapes 1 à 5 faites au 14/11/2026) : `rebuild` pour `a3d5584`,
    corriger Recyclarr (Bluray-1080p), vérifications de l'étape 6 (IP Proton, test ntfy, interfaces web),
-   Locanalyse (**nom de domaine** à choisir, archive à déposer), puis fin d'`atom` (étape 7) : couper
+   Locanalyse **fait** (reste : `locanalyse.enable = false` sur `atom`, rejumeler les membres, vérifier le
+   journal du conteneur), puis fin d'`atom` (étape 7, quelques jours après) : couper
    sa sauvegarde B2 et supprimer `b2:NixOS-save:atom` (deux dépôts dans les 10 Go gratuits).
 6. `NixKS` : alertes RAID/SMART sur ntfy (`modules/alertes-disques.nix`) appliquées et testées le 14/11/2026
    (TestMessage reçus) ; test : `sudo mdadm --monitor --scan --oneshot --test`. Console série : `ttyS0,115200n8`
