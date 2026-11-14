@@ -13,6 +13,7 @@
     ./backup.nix      # inactif tant que backup.enable = false
     ./alertes-disques.nix # RAID et SMART sur ntfy (sujet ntfy de backup.nix)
     ./locanalyse.nix  # inactif tant que locanalyse.enable = false
+    ./duckdns.nix     # nom <nom>.duckdns.org, inactif tant que duckdns.domain = null
   ];
 
   # Démarrage hybride : fonctionne que le Kimsufi soit en BIOS legacy ou en UEFI.
