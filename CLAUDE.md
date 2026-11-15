@@ -54,8 +54,8 @@ Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent. **KS-5 obt
   transcodage logiciel seulement)**, 2 × 2 To HDD, 32 Go, 17,99 € HT = 21,59 € TTC (catalogue du
   25/10/2026). Datacenters : gra, rbx, sbg, lon, fra. Config : `hosts/NixKS/`.
 - [Certain] `atom` retiré du dépôt le 15/11/2026 (`flake.nix`, `hosts/atom/`, `secrets/atom.yaml`,
-  `.sops.yaml`) ; l'historique Git les garde. Le serveur lui-même tourne encore avec sa dernière
-  génération tant que l'utilisateur ne l'a pas arrêté/résilié (voir « Reste à faire »).
+  `.sops.yaml`) ; l'historique Git les garde. Selon l'utilisateur (15/11/2026) : serveur reformaté,
+  retiré de Tailscale, dépôt `b2:NixOS-save:atom` supprimé, résiliation OVH en cours.
   KS-5-A (`26sk50a-v1`, Xeon E-2274G avec iGPU) : 26,99 € HT = 32,39 € TTC, hors budget.
 - Tâche planifiée d'alerte de stock : **supprimée le 11/11/2026**. `scripts/ks-stock-check.sh` ne sert plus.
 
@@ -184,9 +184,8 @@ Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent. **KS-5 obt
 5. **`NixKS` : fin du déménagement** (étapes 1 à 5 faites au 14/11/2026) : `rebuild` pour `a3d5584`,
    corriger Recyclarr (Bluray-1080p), vérifications de l'étape 6 (IP Proton, test ntfy, interfaces web),
    Locanalyse **fait** (reste : rejumeler les membres, vérifier le journal du conteneur).
-   Étape 7 (fin d'`atom`) : retrait du dépôt **fait le 15/11/2026** ; reste à l'utilisateur, sur `atom`
-   et dans les consoles : arrêter sa sauvegarde B2 (timer) et l'éteindre, supprimer `b2:NixOS-save:atom`
-   (deux dépôts dans les 10 Go gratuits), le résilier chez OVH, le retirer de Tailscale.
+   Étape 7 (fin d'`atom`) **faite le 15/11/2026** : retrait du dépôt, reformatage, Tailscale, dépôt B2
+   supprimé (selon l'utilisateur). Le bucket B2 ne contient plus que `NixKS`.
 6. `NixKS` : alertes RAID/SMART sur ntfy (`modules/alertes-disques.nix`) appliquées et testées le 14/11/2026
    (TestMessage reçus) ; test : `sudo mdadm --monitor --scan --oneshot --test`. Console série : `ttyS0,115200n8`
    sur `NixKS` (SPCR : 0x3F8, 115200), effective au prochain redémarrage, pas encore testée par SoL.
