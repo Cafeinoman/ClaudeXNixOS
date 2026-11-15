@@ -11,7 +11,7 @@ let
 in
 lib.mkMerge [
   # ---------- Jellyfin : films et séries (port 8096) ----------
-  # Transcodage : impossible sur l'Atom ; sur NixKS (Xeon E3-1270 v6, sans iGPU), logiciel
+  # Transcodage : sur NixKS (Xeon E3-1270 v6, sans iGPU), logiciel
   # seulement, 2 à 3 flux 1080p H.264 ; la 4K HEVC, non.
   # Stratégie : privilégier la lecture directe (formats choisis dans Sonarr/Radarr,
   # clients compatibles), voir README phase 6.

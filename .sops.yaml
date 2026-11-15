@@ -1,15 +1,11 @@
 # Qui peut déchiffrer quels secrets (voir secrets/README.md). Clés PUBLIQUES uniquement.
-# NixKS : clé inscrite par install-from-rescue.sh le 11/11/2026.
+# NixKS : clé inscrite par install-from-rescue.sh le 11/11/2026. atom retiré le 15/11/2026.
 keys:
   # Ta clé personnelle (pour éditer les secrets depuis ton poste ou un serveur).
   - &admin age1gqlz67qlc86qw3e50dvkk97th34phaw53txecv6sc9ugt049mexqllmckt
   # Clés des machines, dérivées de leur clé SSH d'hôte après installation.
-  - &atom age14lrswludpckq93r42w0ehczuav57gm43g6h5cfnljyv8cq9gsc0q3wruy7
   - &NixKS age1g7hsmnxe9rne0nc93atwydxyqp7vjjcw5aejwrp536zgayjycdesyxsw5z
 creation_rules:
-  - path_regex: secrets/atom\.yaml$
-    key_groups:
-      - age: [*admin, *atom]
   - path_regex: secrets/NixKS\.yaml$
     key_groups:
       - age: [*admin, *NixKS]

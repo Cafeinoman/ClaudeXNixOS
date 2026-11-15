@@ -5,8 +5,7 @@ depuis un téléphone pour Claude Code, des side projects, une seedbox et du str
 
 ```
 settings-common.nix           ← réglages communs (utilisateur, clés SSH) : à remplir
-flake.nix                     ← point d'entrée : deux machines, atom et NixKS
-hosts/atom/settings.nix       ← Atom N2800 : rodage, dev, seedbox (pas de streaming)
+flake.nix                     ← point d'entrée : une machine, NixKS (atom retiré le 15/11/2026)
 hosts/NixKS/settings.nix      ← KS-5 Xeon E3-1270 v6 : serveur principal, RAID 1
 hosts/<machine>/network.nix   ← généré à l'installation (IP fixe lue dans le rescue)
 hosts/<machine>/hardware-configuration.nix  ← généré à l'installation
@@ -43,7 +42,7 @@ CHANGELOG.md                  ← journal des changements système
 
    | Serveur | `disks` | `lowSpecHardware` |
    |---|---|---|
-   | `atom` : KS-3 ancien modèle (Atom N2800, 4 Go, 1 × 2 To) | `[ "/dev/sda" ]` | `true` |
+   | un disque, CPU sans AVX (ex. l'ancien `atom`, Atom N2800, 4 Go) | `[ "/dev/sda" ]` | `true` |
    | `NixKS` : KS-5 Xeon E3-1270 v6 (32 Go, 2 × 2 To) | `[ "/dev/sda" "/dev/sdb" ]` | `false` |
 
    Avec deux disques, la config crée un **RAID 1 logiciel** (miroir mdadm) : 2 To
@@ -78,7 +77,7 @@ disque. Le mode rescue reste donc la voie à suivre pour avoir le RAID 1.
    apt-get update && apt-get install -y git
    git clone https://github.com/TOI/nixos-config.git
    cd nixos-config
-   bash scripts/install-from-rescue.sh atom     # ou NixKS
+   bash scripts/install-from-rescue.sh NixKS    # nom du dossier hosts/<machine>
    ```
    Le script vérifie tout et évalue la configuration **avant** d'effacer le disque.
    Il demande de taper `EFFACER`, puis le mot de passe de ton utilisateur (pour sudo).
@@ -106,14 +105,13 @@ disque. Le mode rescue reste donc la voie à suivre pour avoir le RAID 1.
 
 1. **Tailscale** : `sudo tailscale up` puis ouvre le lien affiché pour lier le serveur
    à ton compte. Installe Tailscale sur le téléphone. Le serveur devient joignable
-   sous son nom (`atom` ou `nixks`), même port 22 fermé.
+   sous son nom (`nixks`), même port 22 fermé.
 2. **Session persistante depuis le téléphone** :
-   `mosh TON_USER@atom -- tmux new -A -s main` (ou `@nixks`)
+   `mosh TON_USER@nixks -- tmux new -A -s main`
    (mosh survit aux changements de réseau ; tmux garde la session si tu fermes l'app.)
-3. **Claude Code** (sur `NixKS` seulement) : installé par la config (`pkgs.claude-code` dans
-   `modules/dev.nix`, version figée par `flake.lock`). Lance `claude` une première fois dans
-   `~/nixos-config` et connecte ton compte : il lira `CLAUDE.md`. Sur l'Atom, il ne tourne pas
-   (voir « Limites de l'Atom »).
+3. **Claude Code** : installé par la config si `lowSpecHardware = false` (`pkgs.claude-code`
+   dans `modules/dev.nix`, version figée par `flake.lock` ; il exige un CPU avec AVX). Lance
+   `claude` une première fois dans `~/nixos-config` et connecte ton compte : il lira `CLAUDE.md`.
 4. **Premier test du cycle de modification** : ajoute un paquet dans
    `modules/base.nix`, puis `rebuild-check`, `rebuild`, `git commit`.
 
@@ -199,7 +197,7 @@ partagerais mal, et le ratio s'effondrerait.
   Proton. Génère-en une nouvelle et remplace le fichier, puis
   `sudo systemctl restart proton qbittorrent proton-port-forward`.
 
-`<machine>` = `atom` ou `nixks` selon le serveur (noms Tailscale, en minuscules).
+`<machine>` = `nixks` (nom Tailscale, en minuscules).
 
 | Service | Rôle | Adresse (via Tailscale) |
 |---|---|---|
@@ -259,7 +257,7 @@ Pourquoi les bases ne vont pas dans Git : ce sont des fichiers binaires qui chan
 diff lisible), qu'il faut arrêter le service pour copier proprement, et qui
 contiennent des secrets en clair (clés API, cookies d'indexeurs).
 
-**Déménagement Atom → NixKS** : voir la section du même nom, après la phase 7.
+**Déménager vers un autre serveur** : voir la section du même nom, après la phase 7.
 
 ## Phase 5 — Entretien
 
@@ -305,7 +303,6 @@ Conséquences :
 - **Bande passante sortante** : elle limite le nombre de flux simultanés hors de
   chez toi. Un film 1080p en lecture directe demande 8 à 20 Mbit/s ; vérifie le débit
   de ton offre Kimsufi.
-- **Atom** : lecture directe uniquement, aucun transcodage.
 
 **Stratégie pour éviter le transcodage** :
 1. Dans Sonarr/Radarr, préfère les sorties **1080p H.264 (x264), audio AAC/AC3**,
@@ -416,7 +413,7 @@ Si un jour le stockage approche 7,5 Go (e-mail « 75 % »), réduis l'historique
    seulement au dossier de sauvegarde. Le plus prudent est un compte Proton gratuit
    dédié aux sauvegardes (4 archives tiennent largement dans l'espace gratuit) ; ton
    compte principal fonctionne aussi, en acceptant ce risque.
-3. Dans l'app Proton Drive, crée le dossier `backups/<machine>` (ex. `backups/atom`)
+3. Dans l'app Proton Drive, crée le dossier `backups/<machine>` (ex. `backups/NixKS`)
    à la racine de « Mes fichiers ».
 
 ### Activation
@@ -431,7 +428,7 @@ Si un jour le stockage approche 7,5 Go (e-mail « 75 % »), réduis l'historique
 5. Proton, une seule fois :
    ```bash
    # Binaire officiel : sur proton.me/download/drive/cli, copie le lien « Linux x64 baseline »
-   # (la version standard plante sur l'Atom, qui n'a pas AVX2).
+   # (la version standard exige AVX2 ; la « baseline » fonctionne partout).
    sauvegarde-proton install 'LIEN_COPIÉ'
    sauvegarde-proton login     # ouvre l'URL affichée sur ton téléphone
    ```
@@ -444,7 +441,7 @@ sauvegarde-proton login     # si la session Proton a expiré
 ```
 
 Bons moments pour la lancer : avant une grosse modification (mise à jour NixOS, nouveau
-service), avant le déménagement vers `NixKS`, et au moins une fois par mois. La
+service), avant un déménagement de serveur, et au moins une fois par mois. La
 commande vérifie d'abord la session Proton : si elle a expiré, elle s'arrête **avant**
 d'arrêter les applications et te dit de te reconnecter. Les 4 dernières archives sont
 conservées.
@@ -464,84 +461,74 @@ conservées.
 sudo restic-b2 snapshots
 sudo restic-b2 restore latest --target /tmp/restauration --include /var/lib/sonarr
 # Proton : télécharger l'archive depuis l'app, puis
-age -d -i ~/.config/sops/age/keys.txt atom-AAAAMMJJ.tar.gz.age | tar -tzf - | head
+age -d -i ~/.config/sops/age/keys.txt NixKS-AAAAMMJJ.tar.gz.age | tar -tzf - | head
 ```
 
 À garder **hors du serveur**, dans ton gestionnaire de mots de passe : le mot de passe
 restic, ta clé age (`keys.txt`), l'identifiant B2. Sans eux, les sauvegardes sont
 illisibles, y compris pour toi.
 
-## Déménagement Atom → NixKS
+## Déménager vers un autre serveur
 
-Principe : `NixKS` s'installe **avec tout désactivé** (chaque option dépend d'un fichier
-absent d'une machine neuve), puis reçoit les services dans l'ordre où leurs fichiers
-arrivent. `atom` continue de tourner jusqu'à la bascule, puis s'arrête.
+Fait une fois : `atom` → `NixKS` (11-15/11/2026). Principe : la nouvelle machine s'installe
+**avec tout désactivé** (chaque option dépend d'un fichier absent d'une machine neuve), puis
+reçoit les services dans l'ordre où leurs fichiers arrivent. L'ancienne tourne jusqu'à la bascule.
 
-**Avant de commencer**
-- Sur `atom` : une sauvegarde B2 de moins de 24 h (`systemctl status restic-backups-b2`).
-- Décide de l'**adresse publique de Locanalyse** sur `NixKS`. Elle est inscrite dans les
-  codes de jumelage : passer de l'IP d'`atom` à celle de `NixKS` oblige de toute façon à
-  rejumeler tous les membres. Un **nom de domaine** (enregistrement A vers l'IP de
-  `NixKS`) rend ce rejumelage le dernier : au prochain changement de serveur, seul le DNS
-  bouge.
+**Avant de commencer** — sur l'ancienne : une sauvegarde B2 de moins de 24 h
+(`systemctl status restic-backups-b2`).
 
-**1. Installation** — phases 1 et 2 sur `NixKS` (`lsblk` dans le rescue : deux disques de
-2 To, normalement `/dev/sda` et `/dev/sdb` ; pas besoin de `TEMP_SWAP` avec 32 Go).
-Rapatrie dans Git les fichiers générés et `.sops.yaml`. `sudo tailscale up` : la machine
-apparaît sous `nixks`.
+**1. Installation** — `hosts/<nouvelle>/settings.nix`, entrée dans `flake.nix`, puis phases 1 et 2.
+Rapatrie dans Git les fichiers générés et `.sops.yaml`. `sudo tailscale up`.
 
-**2. Secrets** — depuis le poste : `sops secrets/NixKS.yaml` (voir `secrets/README.md`).
-Mêmes valeurs que `secrets/atom.yaml` pour `b2_account_id`, `b2_account_key`, `ntfy_topic` ;
-un `restic_password` neuf ou le même, au choix (le dépôt `b2:NixOS-save:NixKS` est neuf).
-`sonarr_api_key` / `radarr_api_key` : **les mêmes que sur `atom`**, car les clés API
-voyagent avec l'état des applications importé à l'étape 5.
+**2. Secrets** — depuis le poste : `sops secrets/<nouvelle>.yaml` (voir `secrets/README.md`).
+Mêmes `b2_account_id`, `b2_account_key`, `ntfy_topic`, `duckdns_token` que l'ancienne ; un
+`restic_password` neuf ou le même (le dépôt `b2:<bucket>:<nouvelle>` est neuf).
+`sonarr_api_key` / `radarr_api_key` : **les mêmes que l'ancienne**, car les clés API voyagent
+avec l'état des applications importé à l'étape 5.
 
-**3. Fichiers hors de Git**, déposés à la main sur `NixKS` (tu les copies toi-même, ils
-ne passent pas par Claude) :
-- `/var/lib/secrets/proton.conf` (root, `chmod 600`) : le même que sur `atom`, ou un
-  nouveau fichier WireGuard généré chez Proton (préférable : une clé par machine) ;
-- `/var/lib/locanalyse-src/locanalyse-serveur.tar.gz` : la même archive que sur `atom`
-  (même `narHash`).
+**3. Fichiers hors de Git**, déposés à la main (ils ne passent pas par Claude) :
+- `/var/lib/secrets/proton.conf` (root, `chmod 600`) : de préférence un nouveau fichier
+  WireGuard généré chez Proton (une clé par machine) ;
+- `/var/lib/locanalyse-src/locanalyse-serveur.tar.gz` : la même archive (même `narHash`).
 
-**4. Activation** — dans `hosts/NixKS/settings.nix`, recopie les réglages d'`atom` :
-`seedbox` (`enable`, `vpn`, `recyclarr`), `streaming`, `backup.enable` (et
-`protonCopy = true` : le Xeon fait tourner le CLI Proton), `locanalyse` avec la
-nouvelle `publicHost` et `memoryMax` à `"3G"` (valeur commune). `rebuild-check`, puis
-`rebuild`. Les services démarrent à vide.
+**4. Activation** — recopie les réglages de l'ancienne machine dans
+`hosts/<nouvelle>/settings.nix`, `rebuild-check`, puis `rebuild`. Les services démarrent à vide.
 
 **5. Données, puis état des applications**
-1. Première copie des données, `atom` toujours en service (longue) — depuis `NixKS`,
-   en tant que ton utilisateur :
-   `rsync -aHP --info=progress2 atom:/srv/data/ /srv/data/`
+1. Première copie des données, l'ancienne toujours en service (longue) — depuis la nouvelle :
+   `rsync -aHP --info=progress2 <ancienne>:/srv/data/ /srv/data/`
    **`-H` est indispensable** : sans lui, chaque fichier présent à la fois dans
    `torrents/` et `media/` (lien physique) est copié deux fois et occupe deux fois la place.
-2. Sur `atom` : `sudo bash scripts/migrate-app-state.sh export`, puis arrête ses
-   applications pour qu'il ne télécharge plus rien :
+2. Sur l'ancienne : `sudo bash scripts/migrate-app-state.sh export`, puis arrête ses
+   applications pour qu'elle ne télécharge plus rien :
    `sudo systemctl stop sonarr radarr prowlarr qbittorrent seerr jellyfin recyclarr.timer container@locanalyse`
 3. Seconde passe `rsync -aHP` (rapide : seulement ce qui a changé).
-4. `scp ~/app-state-*.tar.gz nixks:` puis, sur `NixKS` :
-   `sudo bash scripts/migrate-app-state.sh import ~/app-state-atom-….tar.gz`
+4. Copie l'archive sur la nouvelle, puis :
+   `sudo bash scripts/migrate-app-state.sh import ~/app-state-….tar.gz`
    L'archive contient aussi l'état de Locanalyse (clé de signature, base, comptes ntfy).
 5. `shred -u` l'archive des deux côtés.
 
 Les chemins sont identiques (`/srv/data/...`, qBittorrent sur `192.168.15.1:8090`) : rien à
 reconfigurer dans Sonarr/Radarr/Seerr. Dans Jellyfin, lance une analyse de bibliothèque.
+Locanalyse : la mise à jour DuckDNS de la nouvelle machine fait pointer le nom sur sa nouvelle
+IP, sans rejumelage.
 
-**6. Vérifications sur `NixKS`** — chaque interface web via `http://nixks:<port>` ;
-`systemctl --failed` vide ; IP de qBittorrent = IP Proton ; port NAT-PMP attribué
-(`journalctl -u proton-port-forward`) ; `sudo systemctl start restic-backups-b2` puis
-alerte ntfy de test ; Locanalyse joignable sur la nouvelle adresse, puis **rejumelage des
-membres** ; `cat /proc/mdstat` = `[UU]` une fois la synchronisation terminée.
+**6. Vérifications** — chaque interface web ; `systemctl --failed` vide ; IP de qBittorrent =
+IP Proton ; port NAT-PMP attribué (`journalctl -u proton-port-forward`) ;
+`sudo systemctl start restic-backups-b2` puis alerte ntfy de test ; Locanalyse joignable ;
+`cat /proc/mdstat` = `[UU]`.
 
-**7. Fin d'`atom`** — après quelques jours sans souci :
-- `backup.enable = false` sur `atom` et supprime le dépôt `atom` du bucket B2 : deux
-  dépôts se partagent les 10 Go gratuits, et le plafond à 0 $ ferait **refuser** les
-  sauvegardes de `NixKS` une fois la limite atteinte ;
-- `atom` reste facturé tant qu'il n'est pas résilié : avec le KS-5 (21,59 € TTC), les
-  deux ensemble dépassent probablement le budget de 30 €/mois ;
-- retire `atom` de `.sops.yaml` et de Tailscale.
+**7. Fin de l'ancienne** — après quelques jours sans souci :
+- arrête sa sauvegarde B2 et **supprime son dépôt** du bucket : deux dépôts se partagent les
+  10 Go gratuits, et le plafond à 0 $ ferait **refuser** les sauvegardes de la nouvelle ;
+- résilie-la chez OVH (elle reste facturée sinon) ;
+- retire-la de Tailscale, de `.sops.yaml`, de `flake.nix`, et supprime `hosts/<ancienne>/` et
+  `secrets/<ancienne>.yaml`.
 
 ## Locanalyse sur NixKS avec DuckDNS
+
+En service depuis le 14/11/2026 : `locanalyse.duckdns.org` → `54.36.110.44`. La procédure
+ci-dessous sert à le recréer.
 
 But : adresse publique `<nom>.duckdns.org` (gratuite) au lieu d'une IP. Elle est inscrite dans les
 codes de jumelage : au prochain changement de serveur, seul le DNS bouge, sans rejumelage.
@@ -558,18 +545,15 @@ codes de jumelage : au prochain changement de serveur, seul le DNS bouge, sans r
 `duckdns_token: <token>`, enregistre, commit sur une branche, PR. Tant que cette clé manque,
 activer `duckdns.domain` fait échouer la construction (sops-nix vérifie la clé) : c'est voulu.
 
-**3. L'archive Locanalyse (poste)** — la même que sur `atom` (même `narHash`) :
+**3. L'archive Locanalyse (poste)** — celle dont le `narHash` est dans `hosts/NixKS/settings.nix` :
 ```bash
-scp atom:/var/lib/locanalyse-src/locanalyse-serveur.tar.gz /tmp/
-scp /tmp/locanalyse-serveur.tar.gz nixks:
+scp locanalyse-serveur.tar.gz nixks:
 ssh -t nixks 'sudo install -D -m 644 ~/locanalyse-serveur.tar.gz /var/lib/locanalyse-src/locanalyse-serveur.tar.gz && rm ~/locanalyse-serveur.tar.gz'
 ```
-Puis `sha256sum` du fichier sur les deux serveurs : les empreintes doivent être identiques.
+Puis `sha256sum` du fichier sur le poste et sur le serveur : les empreintes doivent être identiques.
 
-**4. L'état de Locanalyse** — il a été importé avec le reste (`migrate-app-state.sh`, le
-14/11/2026 à 07:20). S'il a encore tourné sur `atom` après l'export (07:18), cet état est en retard :
-arrête `container@locanalyse` sur `atom` et refais un export/import AVANT l'étape 6 (l'import
-remplace aussi l'état des *arr de `NixKS` par celui d'`atom`).
+**4. L'état de Locanalyse** — clé de signature, base, comptes ntfy : il vient de
+`migrate-app-state.sh import` (déménagement) ou de la sauvegarde B2 (restauration).
 
 **5. Réglages (Claude, PR)** — dans `hosts/NixKS/settings.nix` :
 ```nix
@@ -577,14 +561,12 @@ duckdns = { domain = "<nom>"; };
 locanalyse = common.locanalyse // {
   enable = true;
   publicHost = "<nom>.duckdns.org";   # ntfy : même nom, port 8443
-  narHash = "<celui d'atom>";
+  narHash = "<celui de l'archive>";
   memoryMax = "3G";
 };
 ```
 
 **6. Bascule** — après le merge, sur `NixKS` : `git switch main && git pull --ff-only`, `rebuild`.
-- Sur `atom` : `sudo systemctl stop container@locanalyse`, puis `locanalyse.enable = false` dans
-  `hosts/atom/settings.nix` (PR) et `rebuild` sur `atom`. Les ports 80/443 d'`atom` se ferment.
 - Vérifications sur `NixKS` :
   `systemctl status duckdns-update container@locanalyse --no-pager` (le premier doit afficher
   `<nom>.duckdns.org → 54.36.110.44`) ; depuis le téléphone, `https://<nom>.duckdns.org` sans
@@ -629,34 +611,7 @@ Causes probables, dans l'ordre :
 Tout activer (seedbox complète + VPN + quatre services de streaming) consomme
 environ 3 à 4 Go, Claude Code et deux ou trois side projects compris. Un transcodage
 Jellyfin ajoute 0,5 à 1 Go. Il reste de la marge, y compris pour des machines
-virtuelles : contrairement à l'Atom, le Xeon gère VT-x.
-
-## Limites de l'Atom (machine `atom`) à garder en tête
-
-- **Pas de Claude Code** : le processeur n'a ni AVX ni SSE4.2/POPCNT, que le binaire de
-  Claude Code (compilé avec Bun) exige ; il plante avec « Illegal instruction ». Pareil pour
-  tout outil compilé avec Bun.
-- **Jellyfin instable** : la lecture directe fonctionne (testée en 1080p et en 4K H.264, via
-  le navigateur et en SMB avec VLC), mais Jellyfin plante parfois avec « instruction illégale »
-  (`status=4/ILL`) dans sa bibliothèque SQLite, compilée pour des processeurs plus récents.
-  systemd le relance seul. Sur l'Atom, la limite de débit est le chiffrement Tailscale
-  (~50 % d'un fil pour une 4K à ~8,5 Mbit/s), pas Jellyfin.
-- **Pas de VT-x** : pas de machines virtuelles (KVM). Les conteneurs Docker fonctionnent.
-- **CPU lent** : un `rebuild` prend plusieurs minutes, et toute compilation depuis les
-  sources est à éviter. Reste sur la branche stable, qui est presque entièrement en
-  cache binaire.
-- **4 Go de RAM**, estimation (à vérifier avec `btop` une fois en service) :
-
-  | Poste | RAM approx. |
-  |---|---|
-  | Système, SSH, Tailscale | 0,4 Go |
-  | qBittorrent + Prowlarr + Sonarr + Radarr | 0,8 à 1 Go |
-  | Un side project (Node, Python, petit conteneur) | 0,2 à 0,5 Go |
-  | Bazarr / Jellyfin (options) | +0,25 / +0,4 Go |
-
-  Avec le socle Servarr, il reste de la marge. Avec tout activé et un projet lourd,
-  le système passera sur le swap zram : plus lent, mais pas de plantage.
-- **Disque dur** : premières installations de dépendances (npm, Docker) lentes.
+virtuelles : le Xeon gère VT-x.
 
 ## Suggestions (pas encore dans la config)
 
@@ -676,8 +631,7 @@ Classées par utilité pour toi :
 4. **Jellyfin : plugins** — « Intro Skipper » (saute les génériques), « Playback
    Reporting » (statistiques). À installer depuis le catalogue intégré de Jellyfin.
 
-À éviter : **FlareSolverr** sur l'Atom (Chromium embarqué, trop lourd ; acceptable
-sur le Xeon si un indexeur l'exige), **Readarr** (plus maintenu), le transcodage
+À éviter : **FlareSolverr** sauf si un indexeur l'exige (Chromium embarqué, lourd), **Readarr** (plus maintenu), le transcodage
 4K, quel que soit le serveur.
 
 ## Ce qui n'a pas été testé
@@ -686,8 +640,5 @@ La configuration a été évaluée avec succès (NixOS 26.05 ; profil par défau
 `atom` avec tout activé, profil Xeon RAID 1 (alors nommé `ks3`) avec tout activé et Jellyfin public ; aucun
 avertissement ; `NixKS` réévalué le 11/11/2026 dans sa configuration d'installation), le
 script d'installation et le service de redirection de port passent `shellcheck`.
-`atom` installé et en service depuis le 24/10/2026 (disque unique). Le chemin **RAID 1**
-du script (deux disques, `/boot` en miroir) n'a jamais tourné sur une vraie machine. Un
-`nix build --dry-run` confirme que tous les logiciels viennent du cache binaire
-(seuls les fichiers de configuration sont construits sur place). Elle n'a **pas** été
-démarrée sur un vrai Kimsufi : le premier démarrage reste le moment de vérité.
+Installé en réel : `atom` (disque unique, 24/10/2026, retiré du dépôt le 15/11/2026) et `NixKS`
+(RAID 1, UEFI, 11/11/2026). Jamais testés en réel : la copie Proton Drive et une restauration B2.

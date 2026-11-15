@@ -26,7 +26,7 @@ lui-même dans `.sops.yaml` si la ligne `age1CHANGE_ME_cle_<machine>` y est enco
 nix shell nixpkgs#ssh-to-age -c sh -c 'ssh-to-age < /etc/ssh/ssh_host_ed25519_key.pub'
 ```
 
-Mets le résultat (`age1...`) à la place de `age1CHANGE_ME_cle_atom` (ou `_NixKS`) dans
+Mets le résultat (`age1...`) à la place de `age1CHANGE_ME_cle_<machine>` dans
 `.sops.yaml`.
 
 ## Le mot de passe restic
@@ -45,7 +45,7 @@ chiffré avec ce mot de passe. Sans lui, la sauvegarde est illisible, y compris 
 
 ```bash
 cd ~/Projets/NixServer          # sur le poste (ou ~/nixos-config sur un serveur, avec nix shell nixpkgs#sops)
-sops secrets/atom.yaml          # ou NixKS.yaml
+sops secrets/NixKS.yaml         # ou <machine>.yaml
 ```
 
 Contenu à saisir (l'éditeur s'ouvre ; à l'enregistrement, sops chiffre) :
@@ -63,5 +63,5 @@ est illisible, y compris pour toi. Garde-le hors du serveur.
 Après avoir modifié `.sops.yaml` (nouvelle machine), mets à jour les fichiers existants :
 
 ```bash
-nix shell nixpkgs#sops -c sops updatekeys secrets/atom.yaml
+nix shell nixpkgs#sops -c sops updatekeys secrets/NixKS.yaml
 ```
