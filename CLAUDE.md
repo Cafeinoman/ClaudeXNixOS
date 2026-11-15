@@ -42,17 +42,20 @@ qui sert à :
 Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent. **KS-5 obtenu et installé le
 11/11/2026** : `ns3109411.ip-54-36-110.eu`, IP `54.36.110.44`, datacenter **Limburg** (`lim1`, Allemagne).
 
-## Deux machines, un dépôt
+## La machine (et l'ancienne)
 
 | Machine | Matériel | Rôle |
 |---|---|---|
-| `atom` (déjà louée) | KS-3 ancien : Atom N2800, 4 Go, 1 × 2 To, pas de VT-x, ni AVX ni SSE4.2 | rodage, seedbox + VPN, sauvegarde B2 ; Jellyfin et SMB en lecture directe (Jellyfin instable : SQLite en SIGILL) ; **pas de Claude Code** |
-| `NixKS` (installée le 11/11/2026, services pas encore activés) | KS-5 : Xeon E3-1270 v6 (4 c / 8 f, AVX2, **sans iGPU**), 32 Go, 2 × 2 To HGST HUS724020ALA640 en RAID 1 mdadm, démarrage **UEFI** | serveur principal : dev + seedbox + streaming |
+| `atom` (**retirée du dépôt le 15/11/2026**) | KS-3 ancien : Atom N2800, 4 Go, 1 × 2 To, pas de VT-x, ni AVX ni SSE4.2 | rodage, seedbox + VPN, sauvegarde B2 ; Jellyfin et SMB en lecture directe (Jellyfin instable : SQLite en SIGILL) ; **pas de Claude Code** |
+| `NixKS` (installée le 11/11/2026, seule machine du dépôt) | KS-5 : Xeon E3-1270 v6 (4 c / 8 f, AVX2, **sans iGPU**), 32 Go, 2 × 2 To HGST HUS724020ALA640 en RAID 1 mdadm, démarrage **UEFI** | serveur principal : dev + seedbox + streaming |
 
 - Nom Tailscale / DNS de `NixKS` : `nixks` (les noms d'hôte sont insensibles à la casse).
 - Machine suivante : **KS-5 (`24sk50-v1`, Xeon E3-1270 v6, 4 cœurs / 8 fils, sans iGPU donc
   transcodage logiciel seulement)**, 2 × 2 To HDD, 32 Go, 17,99 € HT = 21,59 € TTC (catalogue du
   25/10/2026). Datacenters : gra, rbx, sbg, lon, fra. Config : `hosts/NixKS/`.
+- [Certain] `atom` retiré du dépôt le 15/11/2026 (`flake.nix`, `hosts/atom/`, `secrets/atom.yaml`,
+  `.sops.yaml`) ; l'historique Git les garde. Le serveur lui-même tourne encore avec sa dernière
+  génération tant que l'utilisateur ne l'a pas arrêté/résilié (voir « Reste à faire »).
   KS-5-A (`26sk50a-v1`, Xeon E-2274G avec iGPU) : 26,99 € HT = 32,39 € TTC, hors budget.
 - Tâche planifiée d'alerte de stock : **supprimée le 11/11/2026**. `scripts/ks-stock-check.sh` ne sert plus.
 
@@ -92,8 +95,8 @@ Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent. **KS-5 obt
 - **Locanalyse** (`modules/locanalyse.nix`) : conteneur NixOS à utilisateurs privés, chargé depuis une
   archive **hors de Git** (`/var/lib/locanalyse-src/locanalyse-serveur.tar.gz`) épinglée par `narHash`.
   Ports 80/443 (+ 8443 pour ntfy). `publicHost` est inscrit dans les codes de jumelage : changer d'adresse
-  = rejumeler tous les membres. [Certain] Conséquence : **`atom` ne s'évalue plus hors du serveur**
-  (l'archive manque), et `NixKS` non plus depuis le 14/11/2026 (Locanalyse activé).
+  = rejumeler tous les membres. [Certain] Conséquence : **`NixKS` ne s'évalue plus hors du serveur**
+  depuis le 14/11/2026 (Locanalyse activé, l'archive manque ailleurs).
 - **DuckDNS** (`modules/duckdns.nix`) : `locanalyse.duckdns.org` → IPv4 seulement, mise à jour quotidienne
   (jeton `duckdns_token` dans sops). **Pas d'AAAA** : le conteneur ne reçoit 80/443 que par une redirection
   IPv4 (`forwardPorts`) ; une AAAA ferait échouer Let's Encrypt et les clients IPv6.
@@ -102,7 +105,6 @@ Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent. **KS-5 obt
 
 - [Certain] `NixKS` s'évalue sans avertissement (11/11/2026, `flake.lock` de `da6dc0e`) : trois RAID 1
   (`/dev/md/boot`, `/dev/md/swap`, `/dev/md/root`), GRUB sur `/dev/sda` et `/dev/sdb`, `boot.swraid` actif.
-  `atom` ne s'évalue que sur le serveur (archive Locanalyse).
 - [Certain] Jusqu'au 25/10/2026, les deux machines s'évaluaient sans avertissement, options activées et désactivées ;
   `shellcheck` propre sur tous les scripts et scripts générés ; allers-retours restic et age testés
   en local.
@@ -175,15 +177,16 @@ Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent. **KS-5 obt
 
 1. Phase 3 **faite sur `NixKS` le 14/11/2026** : SSH et mosh via Tailscale seulement (poste et téléphone
    testés, port 22 public fermé, seul 41641/udp ouvert), expiration de clé Tailscale désactivée pour
-   `nixks`. Secours : KVM/SoL du manager OVH + mot de passe. `atom` le recevra à son prochain `rebuild`.
+   `nixks`. Secours : KVM/SoL du manager OVH + mot de passe. 
 2. Tester une **restauration** B2 une fois (README, « Restaurer »), avant d'en avoir besoin.
 3. Première semaine : surveiller la console B2 (« Caps & Alerts ») et la taille du dépôt.
 4. Vérifier le **lien physique** au prochain import Radarr (même inode dans `torrents/` et `media/`).
 5. **`NixKS` : fin du déménagement** (étapes 1 à 5 faites au 14/11/2026) : `rebuild` pour `a3d5584`,
    corriger Recyclarr (Bluray-1080p), vérifications de l'étape 6 (IP Proton, test ntfy, interfaces web),
-   Locanalyse **fait** (reste : `locanalyse.enable = false` sur `atom`, rejumeler les membres, vérifier le
-   journal du conteneur), puis fin d'`atom` (étape 7, quelques jours après) : couper
-   sa sauvegarde B2 et supprimer `b2:NixOS-save:atom` (deux dépôts dans les 10 Go gratuits).
+   Locanalyse **fait** (reste : rejumeler les membres, vérifier le journal du conteneur).
+   Étape 7 (fin d'`atom`) : retrait du dépôt **fait le 15/11/2026** ; reste à l'utilisateur, sur `atom`
+   et dans les consoles : arrêter sa sauvegarde B2 (timer) et l'éteindre, supprimer `b2:NixOS-save:atom`
+   (deux dépôts dans les 10 Go gratuits), le résilier chez OVH, le retirer de Tailscale.
 6. `NixKS` : alertes RAID/SMART sur ntfy (`modules/alertes-disques.nix`) appliquées et testées le 14/11/2026
    (TestMessage reçus) ; test : `sudo mdadm --monitor --scan --oneshot --test`. Console série : `ttyS0,115200n8`
    sur `NixKS` (SPCR : 0x3F8, 115200), effective au prochain redémarrage, pas encore testée par SoL.
@@ -257,7 +260,7 @@ Ce dépôt (`~/nixos-config`) EST la configuration du serveur. Tout ce qui n'y e
 écrit sera perdu à la prochaine reconstruction. Lis ce fichier en début de session.
 
 ## Système (NixOS, géré par flake)
-- Deux machines : `atom` et `NixKS` (`hosts/<machine>/`). Le nom de la machine courante :
+- Une machine : `NixKS` (`hosts/NixKS/` ; `atom` retiré le 15/11/2026). Le nom de la machine courante :
   `hostname`. Les alias `rebuild*` visent automatiquement la bonne machine.
 - Réglages : `settings-common.nix` (commun) et `hosts/<machine>/settings.nix`.
 - Ne jamais installer de logiciel système à la main (pas de `nix-env -i`, pas de
