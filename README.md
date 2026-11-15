@@ -236,6 +236,29 @@ partagerais mal, et le ratio s'effondrerait.
 
 Ces réglages vivent dans `/var/lib/<service>`, pas dans Git : voir « Sauvegardes ».
 
+### Profils de qualité : Recyclarr (`seedbox.recyclarr`)
+
+Recyclarr crée et tient à jour dans Sonarr et Radarr, chaque nuit à 05:30 (après la
+sauvegarde), les profils TRaSH **français** en 1080p et leurs formats personnalisés :
+- **[French MULTi.VF]** : piste audio française, le choix par défaut ;
+- **[French VOSTFR]** : audio d'origine, sous-titres français.
+
+Ils ne servent que si tes indexeurs proposent des versions françaises. Les profils sont
+dans Git (`modules/seedbox.nix`) ; seules les clés API sont secrètes.
+
+1. Clés API de Sonarr et Radarr (Settings → General) dans `sops secrets/<machine>.yaml` :
+   `sonarr_api_key`, `radarr_api_key`. Sans elles, la construction échoue (voulu).
+2. `seedbox.recyclarr = true;` puis `rebuild`. Premier passage à la main :
+   `sudo systemctl start recyclarr`, puis `journalctl -u recyclarr -n 30`.
+3. Dans Sonarr/Radarr, assigne l'un des deux profils aux séries et films (et comme profil
+   par défaut à l'ajout, Seerr compris).
+
+**Plafonds de taille** : les qualités 1080p sont limitées à ~19 Mo/min pour les séries
+(~850 Mo pour 45 min) et ~21 Mo/min pour les films (~2,5 Go pour 2 h) : Sonarr/Radarr
+rejettent au-delà. Recyclarr refuse un minimum supérieur au « preferred » : le minimum
+TRaSH du Bluray-1080p (~50 Mo/min) est donc abaissé à celui du WEB-DL 1080p, sinon aucun
+Bluray ne passerait. À revoir si TRaSH change ses valeurs (échec de `recyclarr` dans le journal).
+
 ### Pourquoi cette arborescence
 
 Tout est sous `/srv/data`, sur le même système de fichiers : Sonarr/Radarr rangent
@@ -306,7 +329,7 @@ Conséquences :
 
 **Stratégie pour éviter le transcodage** :
 1. Dans Sonarr/Radarr, préfère les sorties **1080p H.264 (x264), audio AAC/AC3**,
-   lisibles partout. Recyclarr (voir Suggestions) peut appliquer ces profils.
+   lisibles partout. Recyclarr (phase 4, « Profils de qualité ») applique ces profils.
 2. Utilise des clients qui lisent presque tout en direct : **Jellyfin Media Player**
    (PC), **Findroid** ou l'app Jellyfin avec lecteur ExoPlayer/mpv (Android),
    **Swiftfin** ou **Infuse** (iPhone, Apple TV), **Jellyfin pour Android TV**.
@@ -585,15 +608,11 @@ Classées par utilité pour toi :
 1. **Fichier Proton VPN dans sops-nix** — sops-nix est en place pour les sauvegardes ;
    le fichier WireGuard de Proton pourrait y passer aussi, pour ne plus le redéposer à
    la main après une réinstallation.
-2. (Fait : Recyclarr, `seedbox.recyclarr = true`, profils TRaSH français en 1080p :
-   « [French MULTi.VF] » (audio français, le choix par défaut) et « [French VOSTFR] » (audio
-   d'origine, sous-titres français). Ils ne servent que si tes indexeurs proposent des
-   versions françaises.)
-3. **Prétranscodage nocturne** (Tdarr ou Unmanic, en conteneur) — convertit la nuit
+2. **Prétranscodage nocturne** (Tdarr ou Unmanic, en conteneur) — convertit la nuit
    les fichiers problématiques (HEVC, sous-titres PGS) en formats lisibles partout.
    Coûteux en CPU et en temps, mais le Xeon peut tourner la nuit. Utile seulement si
    les profils de qualité ne suffisent pas.
-4. **Jellyfin : plugins** — « Intro Skipper » (saute les génériques), « Playback
+3. **Jellyfin : plugins** — « Intro Skipper » (saute les génériques), « Playback
    Reporting » (statistiques). À installer depuis le catalogue intégré de Jellyfin.
 
 À éviter : **FlareSolverr** sauf si un indexeur l'exige (Chromium embarqué, lourd), **Readarr** (plus maintenu), le transcodage
