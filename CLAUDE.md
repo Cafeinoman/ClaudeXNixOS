@@ -78,10 +78,9 @@ Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent. **KS-5 obt
     de transactions et de stockage à régler manuellement à 0 $ dans la console B2 ; cycle de vie
     « garder seulement la dernière version » ; pas de carte bancaire ; `--exclude-larger-than=200M`).
     [Suppose] la valeur par défaut des plafonds d'un nouveau compte B2 : inconnue, donc à vérifier.
-  - **Proton Drive : à la demande**, commande `sauvegarde-proton` (sous-commandes `install '<lien>'`,
-    `login`, défaut = copie). Archive tar.gz chiffrée avec **age**, garde les 4 dernières.
-    Pas de timer. Vérification de session **avant** l'arrêt des applications. Rappel ntfy si
-    aucune copie depuis `protonReminderDays` (30 ; 0 = jamais), au plus une fois par 7 jours.
+  - **Copie Proton Drive retirée le 15/11/2026** (jugée inutile par l'utilisateur, jamais testée) :
+    B2 est la seule copie hors du serveur. Le code (`sauvegarde-proton`, archive age) reste dans
+    l'historique Git, avant la PR `claude/retrait-proton-drive`.
     Recommandation faite : un **compte Proton dédié** (la session CLI donne accès à tout le Drive).
   - Secrets via **sops-nix + age** (clé machine = clé SSH hôte). Clés attendues dans
     `secrets/<machine>.yaml` : `restic_password`, `b2_account_id`, `b2_account_key`, `ntfy_topic`.
@@ -114,10 +113,6 @@ Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent. **KS-5 obt
 - [Certain] **`NixKS` installé et démarré le 11/11/2026** (UEFI, trois RAID 1 `boot`/`swap`/`root` en
   `[UU]`, aucun service en échec, SSH vérifié par empreinte). Disques SMART sains mais **très vieux** :
   82 720 h (`sda`) et 99 988 h (`sdb`) au 11/11/2026. Les alertes RAID et SMART ne vont que dans le journal.
-- [Certain] **Jamais testé en réel** : copie Proton Drive.
-- Le CLI Proton Drive (`proton-drive`, ~v0.8) est un binaire précompilé (build `x64-baseline`),
-  lancé via `nix-ld`. Ses options peuvent changer. [Probable] Le build « baseline » de Bun exige
-  SSE4.2/POPCNT, que l'Atom n'a pas : `sauvegarde-proton` risque de planter sur l'Atom, à tester.
 - [Certain] **Claude Code ne tourne pas sur l'Atom** : le CPU N2800 n'a ni AVX, ni SSE4.2, ni POPCNT
   (`grep` dans `/proc/cpuinfo` vide). Le paquet `claude-code` n'est installé que si
   `lowSpecHardware = false` (donc `NixKS`). Sur l'Atom, travailler depuis le poste.
@@ -152,7 +147,7 @@ Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent. **KS-5 obt
   (vérifié chiffré). Pas de copie Proton sur l'Atom (CLI Bun incompatible avec le CPU).
 - Déménagement vers `NixKS` (constaté le 14/11/2026, diagnostic en lecture seule) :
   - [Certain] `secrets/NixKS.yaml` en place ; `hosts/NixKS/settings.nix` active seedbox + VPN, Recyclarr,
-    B2, Jellyfin, Seerr, SMB (Locanalyse et `protonCopy` désactivés). Appliqué : la configuration
+    B2, Jellyfin, Seerr, SMB (Locanalyse et la copie Proton, depuis retirée, désactivés). Appliqué : la configuration
     en service ne diffère du dépôt que par le commit `a3d5584` (message d'erreur de `proton-port-forward`).
   - [Certain] `nixks` dans Tailscale ; RAID `[UU]` ×3 ; `/srv` 397 Go utilisés sur 1,9 To.
   - [Certain] `proton.conf` présent (service `proton` actif, port NAT-PMP attribué à 07:21).

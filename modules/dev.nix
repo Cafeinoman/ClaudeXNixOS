@@ -13,7 +13,7 @@ in
   nixpkgs.config.allowUnfreePredicate = pkg: lib.getName pkg == "claude-code";
 
   # Indispensable : permet de lancer les binaires précompilés (outils téléchargés
-  # par npm/pip, extensions VS Code Server, CLI Proton Drive…).
+  # par npm/pip, extensions VS Code Server…).
   programs.nix-ld.enable = true;
 
   # Docker SANS privilèges root : l'utilisateur n'est pas dans le groupe "docker"

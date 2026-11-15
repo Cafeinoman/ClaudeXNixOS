@@ -11,7 +11,7 @@ hosts/<machine>/network.nix   ← généré à l'installation (IP fixe lue dans 
 hosts/<machine>/hardware-configuration.nix  ← généré à l'installation
 modules/system.nix            ← socle commun (démarrage, imports)
 modules/disko.nix             ← partitionnement : 1 disque, ou RAID 1 mdadm sur 2 disques
-modules/backup.nix            ← sauvegardes : restic → B2 (nuit), archive chiffrée → Proton Drive (à la demande)
+modules/backup.nix            ← sauvegardes : restic → B2 (nuit), alertes ntfy
 .sops.yaml, secrets/          ← secrets chiffrés (sops-nix) : mots de passe, clés B2, alertes
 modules/base.nix              ← utilisateur, SSH, pare-feu, Tailscale, mosh, entretien
 modules/dev.nix               ← nix-ld, Docker rootless, direnv, outils de dev
@@ -356,15 +356,18 @@ Tailscale existe sur Android TV, Apple TV et téléphones, mais pas sur les TV S
 
 ---
 
-## Phase 7 — Sauvegardes (B2 gratuit + Proton Drive)
+## Phase 7 — Sauvegardes (B2 gratuit)
 
-| | B2 (principal) | Proton Drive (secondaire) |
-|---|---|---|
-| Fréquence | automatique, chaque nuit vers 4 h | **à la demande** : `sauvegarde-proton` |
-| Outil | restic : chiffré, ne renvoie que les changements | archive tar chiffrée avec age |
-| Historique | 7 jours, 4 semaines, 3 mois | 4 dernières archives |
-| Qui peut relire | quiconque a le mot de passe restic | seulement ta clé age privée |
-| Contenu | état des applications (`/var/lib/...`), `/var/lib/secrets`, ton dossier personnel (sans `node_modules`, caches, images Docker, fichiers > 200 Mo) | idem |
+| | B2 |
+|---|---|
+| Fréquence | automatique, chaque nuit vers 4 h |
+| Outil | restic : chiffré, ne renvoie que les changements |
+| Historique | 7 jours, 4 semaines, 3 mois |
+| Qui peut relire | quiconque a le mot de passe restic |
+| Contenu | état des applications (`/var/lib/...`), `/var/lib/secrets`, ton dossier personnel (sans `node_modules`, caches, images Docker, fichiers > 200 Mo) |
+
+Une seule copie hors du serveur : la copie Proton Drive à la demande a été retirée le
+15/11/2026 (jamais utilisée ; voir l'historique Git pour la remettre).
 
 Les applications sont arrêtées quelques minutes pendant la copie (bases SQLite au repos).
 
@@ -403,56 +406,20 @@ Consommation attendue, à surveiller dans « Caps & Alerts » la première semai
 Si un jour le stockage approche 7,5 Go (e-mail « 75 % »), réduis l'historique
 (`pruneOpts` dans `modules/backup.nix`) ou exclus un dossier.
 
-### Proton Drive : préparation
-
-1. **Ta clé age personnelle** : si tu as suivi `secrets/README.md`, tu en as déjà une
-   (`~/.config/sops/age/keys.txt`). Sa clé publique (`age1...`) va dans
-   `backup.ageRecipient`. Les archives Proton ne se déchiffrent qu'avec cette clé : si
-   ton compte Proton fuitait, elles resteraient illisibles.
-2. **Compte** : la session du serveur donne accès à **tout** le Drive du compte, pas
-   seulement au dossier de sauvegarde. Le plus prudent est un compte Proton gratuit
-   dédié aux sauvegardes (4 archives tiennent largement dans l'espace gratuit) ; ton
-   compte principal fonctionne aussi, en acceptant ce risque.
-3. Dans l'app Proton Drive, crée le dossier `backups/<machine>` (ex. `backups/NixKS`)
-   à la racine de « Mes fichiers ».
-
 ### Activation
 
 1. Crée les secrets : `secrets/README.md` (clés age, `sops secrets/<machine>.yaml`).
 2. Installe l'app **ntfy** sur ton téléphone et abonne-toi au sujet choisi pour
    `ntfy_topic` : c'est là qu'arrivent les alertes.
-3. `settings-common.nix` : `backup.enable = true;` (et `protonCopy = true;` + `ageRecipient`
-   pour Proton), puis `rebuild-check`, `rebuild`, commit.
+3. `hosts/<machine>/settings.nix` : `backup.enable = true;`, puis `rebuild-check`, `rebuild`, commit.
 4. Premier essai B2 : `sudo systemctl start restic-backups-b2`, puis
    `journalctl -u restic-backups-b2 -n 30` et `sudo restic-b2 snapshots`.
-5. Proton, une seule fois :
-   ```bash
-   # Binaire officiel : sur proton.me/download/drive/cli, copie le lien « Linux x64 baseline »
-   # (la version standard exige AVX2 ; la « baseline » fonctionne partout).
-   sauvegarde-proton install 'LIEN_COPIÉ'
-   sauvegarde-proton login     # ouvre l'URL affichée sur ton téléphone
-   ```
-
-### La copie Proton, à la demande
-
-```bash
-sauvegarde-proton           # archive, chiffre et envoie (les applications s'arrêtent quelques minutes)
-sauvegarde-proton login     # si la session Proton a expiré
-```
-
-Bons moments pour la lancer : avant une grosse modification (mise à jour NixOS, nouveau
-service), avant un déménagement de serveur, et au moins une fois par mois. La
-commande vérifie d'abord la session Proton : si elle a expiré, elle s'arrête **avant**
-d'arrêter les applications et te dit de te reconnecter. Les 4 dernières archives sont
-conservées.
 
 ### Alertes
 
 - Échec de la sauvegarde B2 → notification ntfy immédiate.
 - Chien de garde chaque jour à midi : alerte si la dernière réussite B2 a plus de 36 h
   (timer arrêté, plafond B2 atteint…).
-- Rappel (priorité normale, au plus une fois par semaine) si la dernière copie Proton
-  date de plus de 30 jours. Réglable avec `backup.protonReminderDays` (0 = jamais).
 
 ### Restaurer (à tester une fois, avant d'en avoir besoin)
 
@@ -460,12 +427,10 @@ conservées.
 # B2 : lister puis restaurer un dossier
 sudo restic-b2 snapshots
 sudo restic-b2 restore latest --target /tmp/restauration --include /var/lib/sonarr
-# Proton : télécharger l'archive depuis l'app, puis
-age -d -i ~/.config/sops/age/keys.txt NixKS-AAAAMMJJ.tar.gz.age | tar -tzf - | head
 ```
 
 À garder **hors du serveur**, dans ton gestionnaire de mots de passe : le mot de passe
-restic, ta clé age (`keys.txt`), l'identifiant B2. Sans eux, les sauvegardes sont
+restic, ta clé age (`keys.txt`, pour modifier les secrets sops), l'identifiant B2. Sans eux, les sauvegardes sont
 illisibles, y compris pour toi.
 
 ## Déménager vers un autre serveur
@@ -641,4 +606,4 @@ La configuration a été évaluée avec succès (NixOS 26.05 ; profil par défau
 avertissement ; `NixKS` réévalué le 11/11/2026 dans sa configuration d'installation), le
 script d'installation et le service de redirection de port passent `shellcheck`.
 Installé en réel : `atom` (disque unique, 24/10/2026, retiré du dépôt le 15/11/2026) et `NixKS`
-(RAID 1, UEFI, 11/11/2026). Jamais testés en réel : la copie Proton Drive et une restauration B2.
+(RAID 1, UEFI, 11/11/2026). Jamais testé en réel : une restauration B2.

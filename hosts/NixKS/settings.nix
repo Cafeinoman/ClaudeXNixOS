@@ -33,11 +33,9 @@ common // {
     recyclarr = true;  # sonarr_api_key / radarr_api_key d'atom, dans secrets/NixKS.yaml
   };
 
-  # Sauvegarde B2 nocturne, dépôt b2:NixOS-save:NixKS. Copie Proton Drive possible sur ce
-  # CPU, mais jamais testée : à activer séparément (protonCopy, puis `sauvegarde-proton install`).
+  # Sauvegarde B2 nocturne, dépôt b2:NixOS-save:NixKS.
   backup = common.backup // {
     enable = true;
-    protonCopy = false;
   };
 
   # Adresse publique de Locanalyse : nom gratuit mis à jour chaque jour (modules/duckdns.nix,
