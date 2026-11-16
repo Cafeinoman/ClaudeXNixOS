@@ -117,8 +117,11 @@ let
 
   # Notification sur le téléphone quand Claude Code attend une réponse ou une permission
   # (crochet « Notification » de ~/claude-config/settings.json). Seul le nom du dossier part
-  # chez ntfy.sh : ni code, ni contenu de la demande. Priorité haute : en priorité normale, un
-  # téléphone en veille ne reçoit pas le message (constaté le 16/11/2026, deux envois perdus sur trois).
+  # chez ntfy.sh : ni code, ni contenu de la demande. Priorité haute : une demande en
+  # attente doit réveiller un téléphone en veille. Piège constaté le 16/11/2026 : le Cyberfiltre d'Orange
+  # détourne ntfy.sh sur le réseau mobile (certificat cyberfiltre-alerte.orange.fr) ; l'application ne
+  # reçoit alors que par Firebase et ne rattrape pas les messages manqués. Contournement : DNS privé
+  # (dns.quad9.net) sur le téléphone.
   claudeNotify = pkgs.writeShellApplication {
     name = "claude-notify";
     runtimeInputs = [ pkgs.curl pkgs.jq pkgs.coreutils ];
