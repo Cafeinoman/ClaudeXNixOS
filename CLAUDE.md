@@ -276,11 +276,19 @@ Ce dépôt (`~/nixos-config`) EST la configuration du serveur. Tout ce qui n'y e
   persistant : un redémarrage annule), et garder une session ouverte pour vérifier.
 
 ## Projets
+- Les consignes communes à tous les projets (style de réponse, Git, tests, confidentialité) sont dans
+  `~/claude-config` (dépôt privé `Cafeinoman/claude-config`, lié vers `~/.claude` par `install.sh`),
+  avec l'agent `verificateur` et les skills `/livrer` et `/nouveau-projet`.
 - Les side projects vivent dans `~/projects/<nom>`, chacun avec son propre
   `flake.nix` + `.envrc` (`use flake`) pour ses dépendances. Pas de dépendance de
-  projet dans la config système.
+  projet dans la config système. `~/projects` n'est PAS sauvegardé : tout ce qui compte est poussé.
 - Services de test : Docker rootless (`docker compose`), pas de service systemd
   système pour un projet expérimental.
+- Environnement de test isolé par branche : `bac up [branche]`, `bac ls`, `bac rm [branche]`, depuis le
+  dépôt du projet. Le fichier compose publie son port avec `${BAC_PORT}` ; adresse `http://nixks:<port>`,
+  par Tailscale seulement. Les copies de travail sont dans `~/projects/.bacs`.
+- Session tmux par projet : `t <projet>` (crée ou rejoint, depuis le poste comme depuis le téléphone).
+- Les sessions de l'utilisateur sont plafonnées (tranche `user-1000` : 24 Go, poids CPU réduit).
 
 ## Journal
 - Ajouter une ligne dans `CHANGELOG.md` pour chaque changement système :

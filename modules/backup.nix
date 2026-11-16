@@ -40,6 +40,10 @@ let
     # Dossier personnel : dépendances et artefacts reconstruits par les projets
     "${home}/.local/share/docker" "${home}/.local/share/containers"
     "**/node_modules" "**/.direnv" "**/target" "**/result" "**/.venv" "**/__pycache__"
+    # Projets : chacun est poussé dans son dépôt Git (choix de l'utilisateur, 16/11/2026).
+    "${home}/projects"
+    # Binaires de l'application Claude, retéléchargés à la connexion.
+    "${home}/.claude/remote"
     "${home}/.npm" "${home}/.cargo/registry" "${home}/go/pkg" "${home}/.bun"
   ];
   backupPaths = pkgs.writeShellScript "backup-paths" ''
