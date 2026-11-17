@@ -287,6 +287,8 @@ Ce dépôt (`~/nixos-config`) EST la configuration du serveur. Tout ce qui n'y e
 - Environnement de test isolé par branche : `bac up [branche]`, `bac ls`, `bac rm [branche]`, depuis le
   dépôt du projet. Le fichier compose publie son port avec `${BAC_PORT}` ; adresse `http://nixks:<port>`,
   par Tailscale seulement. Les copies de travail sont dans `~/projects/.bacs`.
+- Remote Control par projet : `rc <projet>`, `rc ls`, `rc voir <projet>`, `rc stop <projet>` (serveur dans une
+  session tmux `rc-<projet>`, une copie Git par session distante). Ne survit pas à un redémarrage : le relancer.
 - Session tmux par projet : `t <projet>` (crée ou rejoint, depuis le poste comme depuis le téléphone).
 - Les sessions de l'utilisateur sont plafonnées (tranche `user-1000` : 24 Go, poids CPU réduit).
 
