@@ -33,6 +33,71 @@ let
     '';
   };
 
+  # Serveur Remote Control d'un projet : « rc SpaceHarmony » le lance dans une session tmux
+  # détachée « rc-<projet> », pour ouvrir des sessions Claude Code sur ce projet depuis
+  # l'application Android ou claude.ai/code. Le code reste sur le serveur ; la conversation
+  # passe par l'API d'Anthropic. Chaque session distante travaille dans sa propre copie Git
+  # (--spawn worktree). Préalable, une fois par projet et à la main : « claude remote-control »
+  # dans le dossier, pour accepter l'activation et la confiance (questions posées au terminal).
+  rc = pkgs.writeShellApplication {
+    name = "rc";
+    runtimeInputs = [ pkgs.tmux pkgs.coreutils pkgs.gnused pkgs.gnugrep ];
+    text = ''
+      # Même socket tmux qu'en session SSH, y compris hors d'un shell de connexion.
+      export TMUX_TMPDIR="''${TMUX_TMPDIR:-''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}}"
+      usage() {
+        cat <<'AIDE'
+      Usage :
+        rc <projet>        lance le serveur Remote Control de ~/projects/<projet> (sans effet s'il tourne)
+        rc ls              liste les serveurs en cours
+        rc voir <projet>   affiche le terminal du serveur (adresse, QR code avec espace ; Ctrl-b d pour sortir)
+        rc stop <projet>   arrête le serveur
+      AIDE
+      }
+      cmd="''${1:-}"
+      case "$cmd" in
+        ""|-h|--help) usage ;;
+        ls)
+          tmux list-sessions -F '#{session_name}' 2>/dev/null | sed -n 's/^rc-//p' | grep . || echo "Aucun serveur."
+          ;;
+        voir)
+          [ $# -eq 2 ] || { usage; exit 1; }
+          exec tmux attach-session -t "=rc-$2"
+          ;;
+        stop)
+          [ $# -eq 2 ] || { usage; exit 1; }
+          # Ctrl-C d'abord : le serveur se désinscrit proprement, ses sessions restent reprenables.
+          tmux send-keys -t "=rc-$2:" C-c 2>/dev/null || { echo "Pas de serveur pour $2."; exit 0; }
+          sleep 3
+          tmux kill-session -t "=rc-$2" 2>/dev/null || true
+          echo "Serveur $2 arrêté."
+          ;;
+        *)
+          projet="$cmd"
+          dir="$HOME/projects/$projet"
+          [ -d "$dir" ] || { echo "Projet introuvable : $dir" >&2; exit 1; }
+          if tmux has-session -t "=rc-$projet" 2>/dev/null; then
+            echo "Serveur $projet déjà en cours (rc voir $projet)."
+            exit 0
+          fi
+          tmux new-session -d -s "rc-$projet" -c "$dir" \
+            "claude remote-control --spawn worktree --name '$projet' || { echo; echo 'Serveur arrêté sur erreur. Entrée pour fermer.'; read -r _; }"
+          sleep 5
+          if tmux capture-pane -p -t "=rc-$projet:" | grep -q 'Serveur arrêté sur erreur'; then
+            tmux capture-pane -p -t "=rc-$projet:" | grep . >&2
+            tmux kill-session -t "=rc-$projet"
+            exit 1
+          fi
+          if tmux capture-pane -p -t "=rc-$projet:" | grep -q '\[y/N\]\|(y/n)'; then
+            echo "Le serveur $projet attend une réponse (première fois) : rc voir $projet"
+            exit 0
+          fi
+          echo "Serveur $projet lancé (rc voir $projet)."
+          ;;
+      esac
+    '';
+  };
+
   # Environnement de test isolé par branche : une copie de travail Git à part, un projet
   # docker compose à part (réseau, volumes et conteneurs propres) et un port à part.
   # Joignable par Tailscale seulement (le pare-feu ne fait confiance qu'à tailscale0).
@@ -177,6 +242,7 @@ in
     socat
     t
     bac
+    rc
   ] ++ lib.optional claudeCode claudeCodePkg
     ++ lib.optional ntfy claudeNotify;
 
