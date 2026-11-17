@@ -123,14 +123,18 @@ let
 
   # Notification sur le téléphone quand Claude Code attend une réponse ou une permission
   # (crochet « Notification » de ~/claude-config/settings.json). Seul le nom du dossier part
-  # chez ntfy.sh : ni code, ni contenu de la demande.
+  # chez ntfy.sh : ni code, ni contenu de la demande. Priorité haute : une demande en
+  # attente doit réveiller un téléphone en veille. Piège constaté le 16/11/2026 : le Cyberfiltre d'Orange
+  # détourne ntfy.sh sur le réseau mobile (certificat cyberfiltre-alerte.orange.fr) ; l'application ne
+  # reçoit alors que par Firebase et ne rattrape pas les messages manqués. Contournement : DNS privé
+  # (dns.quad9.net) sur le téléphone.
   claudeNotify = pkgs.writeShellApplication {
     name = "claude-notify";
     runtimeInputs = [ pkgs.curl pkgs.jq pkgs.coreutils ];
     text = ''
       dossier="$(jq -r '.cwd // empty' 2>/dev/null || true)"
       topic="$(cat ${config.sops.secrets.ntfy_topic_claude.path})"
-      curl -fsS --max-time 10 -H "Title: [${settings.hostName}] Claude attend" -H "Tags: robot" \
+      curl -fsS --max-time 10 -H "Title: [${settings.hostName}] Claude attend" -H "Tags: robot" -H "Priority: high" \
         -d "Projet : $(basename "''${dossier:-inconnu}")" "https://ntfy.sh/$topic" >/dev/null
     '';
   };
