@@ -25,6 +25,7 @@ scripts/migrate-app-state.sh  ← déménage l'état des *arr d'une machine à l
 scripts/ks-stock-check.sh     ← vérifie le stock du KS-5 (France, Londres, Francfort)
 CLAUDE.md                     ← règles que Claude Code lit sur le serveur
 CHANGELOG.md                  ← journal des changements système
+LICENSE                       ← licence EUPL 1.2
 ```
 
 ---
@@ -626,3 +627,11 @@ avertissement ; `NixKS` réévalué le 11/11/2026 dans sa configuration d'instal
 script d'installation et le service de redirection de port passent `shellcheck`.
 Installé en réel : `atom` (disque unique, 24/10/2026, retiré du dépôt le 15/11/2026) et `NixKS`
 (RAID 1, UEFI, 11/11/2026). Jamais testé en réel : une restauration B2.
+
+## Licence
+
+© 2026 François Delalleau (Cafeinoman). Ce dépôt est distribué sous la
+**Licence publique de l'Union européenne (EUPL) v. 1.2** : voir [`LICENSE`](LICENSE).
+Le texte joint est la version anglaise ; les versions dans chacune des langues officielles
+de l'UE, dont le français (publiées par la Commission européenne), font également foi.
+Identifiant SPDX : `EUPL-1.2`.

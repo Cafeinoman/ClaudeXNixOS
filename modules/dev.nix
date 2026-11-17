@@ -1,5 +1,5 @@
 # Poste de travail distant pour Claude Code et les side projects.
-{ config, lib, pkgs, settings, ... }:
+{ config, lib, pkgs, settings, nixpkgs-unstable, ... }:
 let
   user = settings.userName;
   # Le sujet ntfy est déclaré par backup.nix (sops) : pas de notification sans lui.
@@ -9,6 +9,12 @@ let
   # pratique AVX. Un processeur sans eux (ex. l'Atom N2800, ancienne machine) donne
   # « Illegal instruction ». Donc seulement si lowSpecHardware = false (NixKS : AVX2).
   claudeCode = !settings.lowSpecHardware;
+  # Claude Code vient de nixos-unstable (voir flake.nix) : seul paquet pris hors de la branche stable.
+  # Mise à jour : nix flake update nixpkgs-unstable, puis rebuild-check.
+  claudeCodePkg = (import nixpkgs-unstable {
+    system = pkgs.stdenv.hostPlatform.system;
+    config.allowUnfreePredicate = pkg: lib.getName pkg == "claude-code";
+  }).claude-code;
 
   # Session tmux par projet : « t veilleur » crée ou rejoint la session, dans ~/projects/veilleur.
   # Même session depuis le poste et le téléphone (mosh/Termius) : le travail continue où il en était.
@@ -171,7 +177,7 @@ in
     socat
     t
     bac
-  ] ++ lib.optional claudeCode claude-code
+  ] ++ lib.optional claudeCode claudeCodePkg
     ++ lib.optional ntfy claudeNotify;
 
   # Même sujet ntfy que les alertes de sauvegarde, lisible par l'utilisateur (l'autre copie

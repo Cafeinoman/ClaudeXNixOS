@@ -6,6 +6,11 @@
     # passer à nixos-26.11 en décembre (voir README, phase 5).
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
 
+    # Sert UNIQUEMENT à prendre un Claude Code récent (modules/dev.nix) : la branche stable
+    # reste à 2.1.223, trop ancien pour Remote Control avec la télémétrie coupée (2.1.283 requis).
+    # Le reste du système vient de la branche stable.
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
+
     disko = {
       url = "github:nix-community/disko/latest";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -21,12 +26,15 @@
     };
   };
 
-  outputs = { nixpkgs, disko, vpn-confinement, sops-nix, ... }:
+  outputs = { nixpkgs, nixpkgs-unstable, disko, vpn-confinement, sops-nix, ... }:
     let
       # Une machine = un dossier hosts/<nom>/ (settings.nix, network.nix,
       # hardware-configuration.nix) + le socle commun modules/system.nix.
       mkHost = name: nixpkgs.lib.nixosSystem {
-        specialArgs.settings = import ./hosts/${name}/settings.nix;
+        specialArgs = {
+          settings = import ./hosts/${name}/settings.nix;
+          inherit nixpkgs-unstable;
+        };
         modules = [
           disko.nixosModules.disko
           vpn-confinement.nixosModules.default
