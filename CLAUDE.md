@@ -195,6 +195,9 @@ Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent. **KS-5 obt
      `fetch --prune` ; « fusionnée » ne vérifie pas la branche cible de la PR.
    - à vérifier après `rebuild` : `menage-git --dry-run`, `systemctl start menage-git`,
      `journalctl -u menage-git` (authentification gh et push SSH sous le service).
+10. `glow` (PR `claude/glow`), réserve du vérificateur (18/11/2026), hors spécification : hors tmux,
+    glow 2.1.2 interroge le terminal (OSC 10/11, DSR) et bloque si celui-ci ne répond pas ; essayer
+    une fois `glow -p` depuis le téléphone par mosh sans tmux (dans tmux : aucune requête).
 
 ## Le rescue OVH de l'Atom (leçons de l'installation)
 

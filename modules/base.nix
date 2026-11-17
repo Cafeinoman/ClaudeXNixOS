@@ -101,6 +101,7 @@ in
     nvd # montre ce qui change entre deux générations
     smartmontools # smartctl -a /dev/sda : état du disque
     ffmpeg-headless # inspecter un fichier vidéo : ffprobe film.mkv
+    glow # lire un fichier Markdown mis en forme : glow -p README.md
   ];
 
   environment.shellAliases = {
