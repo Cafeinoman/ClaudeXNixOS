@@ -186,6 +186,15 @@ Contraintes : budget serveur ≤ **30 € TTC/mois**, 2 To suffisent. **KS-5 obt
    sur `NixKS` (SPCR : 0x3F8, 115200), effective au prochain redémarrage, pas encore testée par SoL.
 7. Décembre 2026 : passer à NixOS 26.11 (26.05 supporté jusqu'au 31/12/2026).
 8. Suggestions du README : `proton.conf` dans sops-nix, plugins Jellyfin.
+9. Ménage Git (`menage-git`, PR `claude/menage-git`), réserves du vérificateur (17/11/2026) :
+   - mineur : racine relative ou `.` → dépôts ignorés sans message (`scripts/menage-git.sh:40`, `:146`) ;
+     usage manuel seulement, le timer passe un chemin absolu. Tests `xfail` dans `tests/verif/`.
+   - Cyberfiltre d'Orange : la notification ntfy ne passe pas sur le S24 en 5G.
+   - suggestions : `--force-with-lease` sur la suppression distante ; erreurs notifiées même sans PR et
+     code de sortie ≠ 0 ; dépôt sans `origin` signalé chaque jour ; `--dry-run` fait quand même
+     `fetch --prune` ; « fusionnée » ne vérifie pas la branche cible de la PR.
+   - à vérifier après `rebuild` : `menage-git --dry-run`, `systemctl start menage-git`,
+     `journalctl -u menage-git` (authentification gh et push SSH sous le service).
 
 ## Le rescue OVH de l'Atom (leçons de l'installation)
 

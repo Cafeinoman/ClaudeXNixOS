@@ -49,5 +49,16 @@
       nixosConfigurations = {
         NixKS = mkHost "NixKS"; # KS-5 Xeon E3-1270 v6 : serveur principal
       };
+
+      # nix flake check : tests des scripts (dépôts Git jetables, sans réseau).
+      checks.x86_64-linux.menage-git =
+        let pkgs = nixpkgs.legacyPackages.x86_64-linux; in
+        pkgs.runCommand "menage-git-test" {
+          nativeBuildInputs = with pkgs; [ bash git shellcheck coreutils findutils gnugrep gnused ];
+        } ''
+          shellcheck ${./scripts/menage-git.sh} ${./scripts/tests/menage-git-test.sh}
+          MENAGE_SCRIPT=${./scripts/menage-git.sh} bash ${./scripts/tests/menage-git-test.sh}
+          touch $out
+        '';
     };
 }
